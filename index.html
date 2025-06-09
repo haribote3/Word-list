@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>単語帳くん</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        :root {
+            --bg-color: #f8fafc;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #1e293b;
+            --text-color-secondary: #64748b;
+            --primary-color: #0ea5e9;
+            --primary-color-hover: #0284c7;
+            --primary-text-color: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+        }
+        .theme-dark {
+            --bg-color: #0f172a;
+            --header-bg-color: #1e293b;
+            --card-bg-color: #334155;
+            --text-color: #e2e8f0;
+            --text-color-secondary: #94a3b8;
+            --primary-color: #f97316;
+            --primary-color-hover: #ea580c;
+            --primary-text-color: #ffffff;
+            --border-color: #475569;
+        }
+        .theme-sakura {
+            --bg-color: #fdf2f8;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #832c56;
+            --text-color-secondary: #c026d3;
+            --primary-color: #ec4899;
+            --primary-color-hover: #db2777;
+            --primary-text-color: #ffffff;
+            --border-color: #fbcfe8;
+        }
+        .theme-matcha {
+            --bg-color: #f7fee7;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #3f3f46;
+            --text-color-secondary: #71717a;
+            --primary-color: #4d7c0f;
+            --primary-color-hover: #365314;
+            --primary-text-color: #ffffff;
+            --border-color: #dcfce7;
+        }
+        .theme-mizu {
+            --bg-color: #ecfeff;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #1e40af;
+            --text-color-secondary: #1d4ed8;
+            --primary-color: #06b6d4;
+            --primary-color-hover: #0891b2;
+            --primary-text-color: #ffffff;
+            --border-color: #cffafe;
+        }
+        .theme-yuyake {
+            --bg-color: #2c244d;
+            --header-bg-color: #312e81;
+            --card-bg-color: #4338ca;
+            --text-color: #ddd6fe;
+            --text-color-secondary: #a5b4fc;
+            --primary-color: #f59e0b;
+            --primary-color-hover: #d97706;
+            --primary-text-color: #ffffff;
+            --border-color: #4f46e5;
+        }
+        .modal, .screen { transition: opacity 0.25s ease; }
+        .hidden { display: none; }
+        .flashcard-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .flashcard.is-flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back { 
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .flashcard-back { transform: rotateY(180deg); }
+        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; pointer-events: none; }
+        .toast { background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 10px; opacity: 0; transition: opacity 0.5s; }
+        .toast.show { opacity: 1; }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+    </style>
+</head>
+<body class="bg-[var(--bg-color)] text-[var(--text-color)]">
+    
+    <div id="toast-container"></div>
+
+    <div id="home-screen" class="screen">
+        <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
+            <div class="container mx-auto px-4 h-16 flex justify-between items-center"><h1 class="text-xl font-bold">単語帳くん</h1><button id="settings-button" class="text-[var(--text-color-secondary)] hover:text-[var(--primary-color)] p-2 rounded-full transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button></div>
+        </header>
+        <main class="container mx-auto p-4 pb-24 flex-grow">
+            <section class="mb-8">
+                <h2 class="text-lg font-bold text-[var(--text-color-secondary)] mb-2">▼ 本日のおすすめ</h2>
+                <div id="recommend-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"><p id="recommend-loading" class="text-[var(--text-color-secondary)] col-span-full">復習するカードはありません。</p></div>
+            </section>
+            <section>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-bold text-[var(--text-color-secondary)]">▼ すべての単語帳</h2>
+                    <div class="relative w-1/2 sm:w-1/3">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-color-secondary)]"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+                        <input type="text" id="search-bar" placeholder="検索..." class="w-full pl-10 pr-3 py-2 bg-[var(--card-bg-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                    </div>
+                </div>
+                <div id="deck-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"><p id="deck-loading" class="text-[var(--text-color-secondary)] col-span-full">読み込み中...</p></div>
+            </section>
+        </main>
+        <footer class="fixed bottom-0 left-0 right-0 bg-[var(--header-bg-color)] border-t border-[var(--border-color)]">
+            <div class="container mx-auto px-4 h-16 flex justify-around items-center">
+                <div class="flex flex-col items-center"><label class="text-xs text-[var(--text-color-secondary)] mb-1">出題</label><button id="toggle-direction" class="font-semibold text-sm sm:text-base">オモテ→ウラ</button></div>
+                <div class="flex flex-col items-center"><label class="text-xs text-[var(--text-color-secondary)] mb-1">モード</label><button id="toggle-mode" class="font-semibold text-sm sm:text-base">カード</button></div>
+                <button id="add-deck-button" class="bg-[var(--primary-color)] text-[var(--primary-text-color)] rounded-full w-12 h-12 text-3xl font-light flex items-center justify-center shadow-lg hover:opacity-80 transition-opacity">+</button>
+            </div>
+        </footer>
+    </div>
+    <div id="deck-screen" class="screen hidden">
+        <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
+            <div class="container mx-auto px-4 h-16 flex justify-between items-center">
+                <button id="back-to-home-button" class="p-2 rounded-full hover:bg-[var(--border-color)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <h1 id="deck-title-header" class="text-xl font-bold truncate"></h1>
+                <div class="flex items-center gap-4">
+                    <button id="csv-import-button" class="text-sm font-semibold border border-current rounded-full px-3 py-1 hover:bg-[var(--border-color)] transition-colors">CSVインポート</button>
+                    <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+                    <button class="text-2xl text-[var(--danger-color)] hover:opacity-75 transition-opacity" id="delete-deck-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                </div>
+            </div>
+        </header>
+        <main class="container mx-auto p-4 pb-24 flex-grow">
+            <div id="tag-filter-bar" class="flex flex-wrap gap-2 mb-4"></div>
+            <div id="card-list-container"></div>
+        </main>
+        <footer class="fixed bottom-0 left-0 right-0 bg-[var(--header-bg-color)] border-t border-[var(--border-color)]">
+            <form id="add-card-form" class="container mx-auto px-4 h-16 flex items-center gap-2">
+                <input type="text" id="new-card-front" placeholder="オモテ" class="flex-1 w-full px-3 py-2 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                <input type="text" id="new-card-back" placeholder="ウラ" class="flex-1 w-full px-3 py-2 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                <button type="submit" class="px-4 py-2 bg-[var(--primary-color)] text-[var(--primary-text-color)] rounded-lg font-bold">追加</button>
+            </form>
+        </footer>
+    </div>
+    <div id="study-screen" class="screen hidden">
+         <header class="container mx-auto px-4 h-16 flex justify-between items-center">
+             <div id="study-progress" class="text-lg font-mono text-[var(--text-color-secondary)]"></div>
+             <button id="exit-study-button" class="text-3xl font-light text-[var(--text-color-secondary)]">×</button>
+        </header>
+        <main id="study-main-content" class="container mx-auto p-4 flex-grow flex flex-col justify-center items-center" style="height: calc(100vh - 128px);">
+            <div id="flashcard-mode" class="w-full max-w-md h-full flex flex-col items-center">
+                <div class="flashcard flex-grow perspective-[1000px] w-full">
+                    <div id="flashcard-inner" class="flashcard-inner relative w-full h-full cursor-pointer">
+                        <div id="flashcard-front" class="flashcard-front absolute w-full h-full bg-[var(--card-bg-color)] shadow-lg rounded-xl text-3xl md:text-4xl text-center"></div>
+                        <div id="flashcard-back" class="flashcard-back absolute w-full h-full bg-[var(--card-bg-color)] shadow-lg rounded-xl text-3xl md:text-4xl text-center"></div>
+                    </div>
+                </div>
+                <button id="flashcard-speak-button" class="mt-4 text-4xl text-[var(--text-color-secondary)] hover:opacity-80 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+            </div>
+             <div id="quiz-mode" class="w-full max-w-md h-full flex-col hidden">
+                <div id="quiz-question" class="w-full text-center text-3xl md:text-4xl font-semibold mb-8 cursor-pointer"></div>
+                <div id="quiz-options" class="grid grid-cols-1 gap-4 w-full"></div>
+            </div>
+        </main>
+        <footer id="study-footer" class="container mx-auto px-4 h-16 flex justify-center items-center gap-4">
+             <div id="flashcard-controls" class="w-full flex justify-center items-center gap-4">
+                <button id="unfamiliar-button" class="w-1/2 max-w-xs h-full bg-white border-2 border-[var(--danger-color)] text-[var(--danger-color)] font-bold rounded-lg shadow-sm">わからない</button>
+                <button id="familiar-button" class="w-1/2 max-w-xs h-full bg-white border-2 border-[var(--success-color)] text-[var(--success-color)] font-bold rounded-lg shadow-sm">わかった</button>
+             </div>
+        </footer>
+    </div>
+    <div id="settings-screen" class="screen hidden">
+        <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
+            <div class="container mx-auto px-4 h-16 flex items-center">
+                <button id="back-to-home-from-settings" class="text-2xl mr-4">‹</button>
+                <h1 class="text-xl font-bold">設定</h1>
+            </div>
+        </header>
+        <main class="container mx-auto p-4">
+            <div class="mb-6">
+                <h2 class="text-lg font-bold text-[var(--text-color-secondary)] mb-2">テーマ</h2>
+                <div id="theme-selector" class="grid grid-cols-3 gap-4">
+                    <button data-theme="theme-light" class="theme-button flex-1 p-4 rounded-lg border-2 border-[var(--border-color)]">ライト</button>
+                    <button data-theme="theme-dark" class="theme-button flex-1 p-4 rounded-lg border-2 border-slate-600 bg-[#1f2937] text-white">Noir</button>
+                    <button data-theme="theme-sakura" class="theme-button flex-1 p-4 rounded-lg border-2 border-pink-200 bg-[#fff0f3] text-[#832c56]">さくら</button>
+                    <button data-theme="theme-matcha" class="theme-button flex-1 p-4 rounded-lg border-2 border-green-200 bg-[#f0fdf4] text-[#14532d]">抹茶</button>
+                    <button data-theme="theme-mizu" class="theme-button flex-1 p-4 rounded-lg border-2 border-cyan-200 bg-[#ecfeff] text-[#1e3a8a]">水</button>
+                    <button data-theme="theme-yuyake" class="theme-button flex-1 p-4 rounded-lg border-2 border-indigo-600 bg-[#312e81] text-orange-200">夕焼け</button>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h2 class="text-lg font-bold text-[var(--text-color-secondary)] mb-4">音声読み上げ</h2>
+                <div class="flex items-center justify-between mb-4">
+                     <label for="quiz-answer-speak-toggle">クイズの正解時に読み上げる</label>
+                     <label class="toggle-switch">
+                         <input type="checkbox" id="quiz-answer-speak-toggle">
+                         <span class="toggle-slider"></span>
+                     </label>
+                </div>
+                <div class="mb-4">
+                    <label for="en-voice-select" class="block mb-1">英語の音声</label>
+                    <select id="en-voice-select" class="w-full p-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg-color)]"></select>
+                </div>
+                 <div class="mb-4">
+                    <label for="en-rate-slider" class="block mb-1">英語の速度: <span id="en-rate-value">1.0</span></label>
+                    <input type="range" id="en-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                </div>
+                 <div class="mb-4">
+                    <label for="ja-voice-select" class="block mb-1">日本語の音声</label>
+                    <select id="ja-voice-select" class="w-full p-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg-color)]"></select>
+                </div>
+                 <div>
+                    <label for="ja-rate-slider" class="block mb-1">日本語の速度: <span id="ja-rate-value">1.0</span></label>
+                    <input type="range" id="ja-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="add-deck-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="bg-[var(--card-bg-color)] rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <h3 class="text-xl font-bold mb-4">新しい単語帳を作成</h3>
+            <input type="text" id="new-deck-title-input" placeholder="単語帳のタイトル" class="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+            <div class="flex justify-end gap-2">
+                <button id="cancel-add-deck" class="px-4 py-2 rounded-lg">キャンセル</button>
+                <button id="confirm-add-deck" class="px-4 py-2 bg-[var(--primary-color)] text-[var(--primary-text-color)] rounded-lg hover:opacity-80 transition-colors">作成</button>
+            </div>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+        <div class="bg-[var(--card-bg-color)] rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <h3 id="confirm-modal-title" class="text-lg font-bold mb-4"></h3>
+            <div class="flex justify-end gap-2">
+                <button id="confirm-modal-cancel" class="px-4 py-2 rounded-lg">キャンセル</button>
+                <button id="confirm-modal-ok" class="px-4 py-2 bg-[var(--danger-color)] text-white rounded-lg">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { openDB } from 'https://unpkg.com/idb@7.1.1/build/index.js';
+        
+        // --- App Entry Point ---
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // --- Global State ---
+        let db;
+        const state = {
+            allDecksCache: [],
+            currentDeckId: null,
+            currentDeckCards: [],
+            currentTagFilter: null,
+            studySession: { cards: [], currentIndex: 0, deckId: null, correctAnswers: 0, startTime: 0, isAnswered: false },
+            uiSettings: { 
+                theme: 'theme-light', 
+                learningMode: 'card', 
+                cardDirection: 'front',
+                enRate: 1.0,
+                enVoice: null,
+                jaRate: 1.0,
+                jaVoice: null,
+                quizAnswerReadAloud: false,
+            }
+        };
+
+        // --- DOM Elements ---
+        const dom = {};
+        
+        // --- Database (IndexedDB) Wrapper ---
+        const DB_NAME = 'tangochokun-db';
+        const DB_VERSION = 1;
+        const DECK_STORE = 'decks';
+        const CARD_STORE = 'cards';
+
+        async function initDB() {
+            db = await openDB(DB_NAME, DB_VERSION, {
+                upgrade(db) {
+                    if (!db.objectStoreNames.contains(DECK_STORE)) {
+                        db.createObjectStore(DECK_STORE, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(CARD_STORE)) {
+                        const store = db.createObjectStore(CARD_STORE, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('deckId', 'deckId', { unique: false });
+                    }
+                },
+            });
+        }
+        
+        const dbOps = {
+            async getDecks() { return await db.getAll(DECK_STORE); },
+            async getDeck(id) { return await db.get(DECK_STORE, id); },
+            async addDeck(deck) { return await db.add(DECK_STORE, deck); },
+            async updateDeck(deck) { return await db.put(DECK_STORE, deck); },
+            async getAllCards() { return await db.getAll(CARD_STORE); },
+            async getCardsByDeck(deckId) { return await db.getAllFromIndex(CARD_STORE, 'deckId', deckId); },
+            async getCard(id) { return await db.get(CARD_STORE, id); },
+            async addCard(card) { return await db.add(CARD_STORE, card); },
+            async deleteCard(cardId) { return await db.delete(CARD_STORE, cardId); },
+            async updateCard(card) { return await db.put(CARD_STORE, card); },
+            async deleteDeck(deckId) {
+                const tx = db.transaction([DECK_STORE, CARD_STORE], 'readwrite');
+                const cardStore = tx.objectStore(CARD_STORE);
+                const cardIndex = cardStore.index('deckId');
+                const cardsToDelete = await cardIndex.getAllKeys(deckId);
+                await Promise.all([
+                    ...cardsToDelete.map(key => cardStore.delete(key)),
+                    tx.objectStore(DECK_STORE).delete(deckId)
+                ]);
+                await tx.done;
+            }
+        };
+
+        // --- Core UI & Logic Functions ---
+        const showScreen = (screenName) => {
+             speechSynthesis.cancel();
+             Object.values(dom.screens).forEach(s => s.classList.add('hidden'));
+             const targetScreen = document.getElementById(`${screenName}-screen`);
+             if(targetScreen) targetScreen.classList.remove('hidden');
+        }
+
+        const showToast = (message, duration = 3000) => {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, duration);
+        }
+
+        const loadSettings = () => {
+            Object.keys(state.uiSettings).forEach(key => {
+                const savedValue = localStorage.getItem(key);
+                if (savedValue) {
+                     if (key.includes('Rate')) {
+                        state.uiSettings[key] = parseFloat(savedValue);
+                    } else if (typeof state.uiSettings[key] === 'boolean') {
+                        state.uiSettings[key] = savedValue === 'true';
+                    } else {
+                        state.uiSettings[key] = savedValue;
+                    }
+                }
+            });
+            updateTheme();
+            updateModeButton();
+            updateDirectionButton();
+            updateSettingsUI();
+        }
+        
+        const saveSetting = (key, value) => {
+            state.uiSettings[key] = value;
+            localStorage.setItem(key, value);
+        }
+        
+        const updateTheme = () => { document.body.className = `bg-[var(--bg-color)] text-[var(--text-color)] ${state.uiSettings.theme}`; }
+        const updateModeButton = () => { dom.toggleMode.textContent = state.uiSettings.learningMode === 'card' ? 'カード' : 'クイズ'; }
+        const updateDirectionButton = () => { dom.toggleDirection.textContent = state.uiSettings.cardDirection === 'front' ? 'オモテ→ウラ' : 'ウラ→オモテ'; }
+        
+        const escapeHTML = (str) => typeof str === 'string' ? str.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])) : '';
+        
+        const renderDecks = (decks) => {
+             dom.deckGrid.innerHTML = '';
+             const term = dom.searchBar.value.toLowerCase();
+             const filtered = decks.filter(d => d.title.toLowerCase().includes(term));
+             if (filtered.length === 0) {
+                 dom.deckGrid.innerHTML = `<p class="text-[var(--text-color-secondary)] col-span-full">単語帳がありません。</p>`;
+                 return;
+             }
+             filtered.forEach(deck => {
+                const progress = deck.progress || 0;
+                const el = document.createElement('div');
+                el.className = 'bg-[var(--card-bg-color)] rounded-lg p-4 shadow-md flex flex-col justify-between cursor-pointer';
+                el.innerHTML = `<div><h3 class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</h3><div class="w-full bg-[var(--progress-bar-bg)] rounded-full h-2.5 mb-2"><div class="bg-[var(--primary-color)] h-2.5 rounded-full" style="width: ${progress}%"></div></div></div><div class="flex justify-between items-center text-sm text-[var(--text-color-secondary)]"><span>進捗: ${progress}%</span><button data-deck-id="${deck.id}" class="play-button text-xl text-[var(--primary-color)] font-bold">▶</button></div>`;
+                el.querySelector('.play-button').addEventListener('click', (e) => { e.stopPropagation(); startLearningSession(deck.id, 'all'); });
+                el.addEventListener('click', () => showDeckScreen(deck.id, deck.title));
+                dom.deckGrid.appendChild(el);
+            });
+        }
+
+        const refreshDecks = async () => {
+            const decks = await dbOps.getDecks();
+            state.allDecksCache = decks.sort((a, b) => b.createdAt - a.createdAt);
+            await updateRecommendationsAndProgress();
+            renderDecks(state.allDecksCache);
+        }
+
+        const checkAndCreateSampleData = async () => {
+            const decks = await dbOps.getDecks();
+            if (decks.length === 0) {
+                const deckId = await dbOps.addDeck({ title: '基本的な英単語', createdAt: Date.now(), progress: 0 });
+                const sampleCards = [
+                    { deckId, front: 'apple', back: 'りんご', createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: ['#fruit'] },
+                    { deckId, front: 'book', back: '本', createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: ['#noun'] },
+                    { deckId, front: 'car', back: '車', createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: ['#vehicle'] },
+                    { deckId, front: 'dog', back: '犬', createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: ['#animal'] },
+                    { deckId, front: 'egg', back: '卵', createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: ['#food'] },
+                ];
+                for (const card of sampleCards) {
+                    await dbOps.addCard(card);
+                }
+            }
+        }
+        
+        const showDeckScreen = async (deckId, deckTitle) => {
+            state.currentDeckId = deckId;
+            dom.deckTitleHeader.textContent = deckTitle;
+            state.currentDeckCards = await dbOps.getCardsByDeck(deckId);
+            renderTagFilters();
+            renderCards();
+            showScreen('deck');
+        }
+
+        const renderCards = () => {
+            dom.cardListContainer.innerHTML = '';
+            if (state.currentDeckCards.length === 0) {
+                dom.cardListContainer.innerHTML = `<p class="text-[var(--text-color-secondary)] text-center mt-8">単語がありません。</p>`;
+                return;
+            }
+            const filteredCards = state.currentTagFilter 
+                ? state.currentDeckCards.filter(card => card.tags && card.tags.includes(state.currentTagFilter)) 
+                : state.currentDeckCards;
+
+            filteredCards.forEach(card => {
+                const cardItem = document.createElement('div');
+                cardItem.className = 'card-item bg-[var(--card-bg-color)] rounded-lg p-3 mb-3 shadow-sm';
+                cardItem.dataset.cardId = card.id;
+                cardItem.innerHTML = createCardView(card);
+                dom.cardListContainer.appendChild(cardItem);
+            });
+        }
+
+        const createCardView = (card) => {
+            const tagsHtml = (card.tags || []).map(tag => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">${escapeHTML(tag)}</span>`).join('');
+            const history = (card.history || []).map(h => `<span class="inline-block w-3 h-3 rounded-full ${h ? 'bg-green-500' : 'bg-red-500'}"></span>`).join('');
+            return `<div class="flex items-center"><div class="flex-1 border-r border-gray-200 pr-3 mr-3 cursor-pointer card-front-div"><div class="text-xs text-[var(--text-color-secondary)]">オモテ</div><div class="card-front-text font-medium">${escapeHTML(card.front)}</div></div><div class="flex-1 cursor-pointer card-back-div"><div class="text-xs text-[var(--text-color-secondary)]">ウラ</div><div class="card-back-text font-medium">${escapeHTML(card.back)}</div></div><div class="flex items-center gap-2 ml-2"><div class="flex gap-1">${history}</div><button class="edit-card-button text-lg hover:text-[var(--primary-color)]">✏️</button><button class="delete-card-button text-lg hover:text-[var(--danger-color)]">🗑️</button></div></div><div class="mt-2">${tagsHtml}</div>`;
+        }
+        
+        const createCardEditView = (card) => {
+             const tagsStr = (card.tags || []).join(', ');
+            return `<div class="flex-1 flex flex-col gap-2"><input class="edit-front-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.front)}"><input class="edit-back-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.back)}"><input class="edit-tags-input w-full px-2 py-1 border rounded" placeholder="タグ (例: #fruit, #food)" value="${escapeHTML(tagsStr)}"></div><div class="flex flex-col gap-2 ml-2"><button class="save-card-button text-lg hover:text-[var(--success-color)]">💾</button><button class="cancel-edit-button text-lg hover:text-[var(--danger-color)]">❌</button></div>`;
+        };
+        
+        const startLearningSession = async (deckId, sessionType = 'all') => {
+            let cards = await dbOps.getCardsByDeck(deckId);
+            
+            if (sessionType === 'review') {
+                const now = Date.now();
+                cards = cards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
+            }
+
+            if (state.currentTagFilter) {
+                cards = cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
+            }
+            if (cards.length === 0) {
+                showToast("学習するカードがありません。");
+                return;
+            }
+            if (state.uiSettings.learningMode === 'quiz' && cards.length < 4) {
+                showToast("クイズモードには最低4枚のカードが必要です。");
+                return;
+            }
+            
+            state.studySession.cards = cards.sort(() => Math.random() - 0.5);
+            state.studySession.currentIndex = 0;
+            state.studySession.correctAnswers = 0;
+            state.studySession.deckId = deckId;
+            
+            showScreen('study');
+            if (state.uiSettings.learningMode === 'card') {
+                dom.flashcardMode.style.display = 'flex';
+                dom.quizMode.style.display = 'none';
+                dom.flashcardControls.style.display = 'flex';
+                showFlashcard();
+            } else {
+                 dom.flashcardMode.style.display = 'none';
+                dom.quizMode.style.display = 'flex';
+                dom.flashcardControls.style.display = 'none';
+                showQuiz();
+            }
+        };
+
+        const showFlashcard = () => {
+            const flashcardEl = dom.flashcardInner.parentElement;
+            flashcardEl.classList.remove('is-flipped');
+             setTimeout(() => {
+                if(state.studySession.currentIndex >= state.studySession.cards.length) return;
+                const cardData = state.studySession.cards[state.studySession.currentIndex];
+                if (!cardData) {
+                    showNextCardOrFinish();
+                    return;
+                }
+                const question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
+                const answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
+                
+                dom.flashcardFront.textContent = question;
+                dom.flashcardBack.textContent = answer;
+                dom.studyProgress.textContent = `${state.studySession.currentIndex + 1} / ${state.studySession.cards.length}`;
+                speak(question);
+            }, 300);
+        };
+        
+        const showQuiz = () => {
+            if(state.studySession.currentIndex >= state.studySession.cards.length) return;
+            state.studySession.isAnswered = false;
+            const quizQuestionEl = dom.quizQuestion;
+            const quizOptionsEl = dom.quizOptions;
+
+            const card = state.studySession.cards[state.studySession.currentIndex];
+            if (!card) {
+                 showNextCardOrFinish();
+                 return;
+            }
+            const questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
+            const correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
+            const options = state.studySession.cards
+                .filter(c => c.id !== card.id)
+                .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .concat(correctAnswer)
+                .sort(() => 0.5 - Math.random());
+            
+            quizQuestionEl.textContent = questionText;
+            quizOptionsEl.innerHTML = '';
+            options.forEach(text => {
+                const button = document.createElement('button');
+                button.className = "w-full p-4 bg-white border-2 border-[var(--border-color)] rounded-lg text-lg font-semibold text-center hover:border-[var(--primary-color)] relative";
+                button.textContent = text;
+                button.onclick = (e) => handleQuizAnswer(e, text, correctAnswer);
+                quizOptionsEl.appendChild(button);
+            });
+            dom.studyProgress.textContent = `${state.studySession.currentIndex + 1} / ${state.studySession.cards.length}`;
+            state.studySession.startTime = Date.now();
+            speak(questionText);
+        };
+
+        const handleQuizAnswer = (e, selected, correct) => {
+            e.stopPropagation();
+            if (state.studySession.isAnswered) {
+                showNextCardOrFinish();
+                return;
+            }
+            state.studySession.isAnswered = true;
+
+            const quizOptionsEl = dom.quizOptions;
+             Array.from(quizOptionsEl.children).forEach(btn => {
+                const isCorrect = btn.textContent === correct;
+                const isSelected = btn.textContent === selected;
+                btn.disabled = true;
+                if (isCorrect) {
+                    btn.classList.add('border-[var(--success-color)]', 'bg-green-50');
+                    btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
+                }
+                if (isSelected && !isCorrect) {
+                    btn.classList.add('border-[var(--danger-color)]', 'bg-red-50');
+                    btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
+                }
+            });
+            const wasCorrect = selected === correct;
+            if (wasCorrect && state.uiSettings.quizAnswerReadAloud) {
+                speak(correct);
+            }
+            processCardResult(wasCorrect);
+        };
+
+        const processCardResult = async (wasCorrect) => {
+            if(wasCorrect && state.uiSettings.learningMode === 'quiz') {
+                state.studySession.correctAnswers++;
+            }
+            const card = state.studySession.cards[state.studySession.currentIndex];
+            if (!card) return;
+            let scoreChange = 0;
+            if (state.uiSettings.learningMode === 'quiz') {
+                const time = (Date.now() - state.studySession.startTime) / 1000;
+                if(!wasCorrect) scoreChange = 5;
+                else if (time > 3) scoreChange = 2;
+                else scoreChange = -1;
+            } else {
+                 scoreChange = wasCorrect ? -1 : 3;
+            }
+            
+            card.consecutiveCorrect = wasCorrect ? (card.consecutiveCorrect || 0) + 1 : 0;
+            card.nigatescore = Math.max(0, (card.nigatescore || 0) + scoreChange);
+            const interval = wasCorrect ? Math.pow(2, Math.max(0, card.consecutiveCorrect - 1)) : 1;
+            card.nextReviewDate = Date.now() + interval * 24 * 60 * 60 * 1000;
+            
+            card.history = [wasCorrect, ...(card.history || [])].slice(0, 3);
+            
+            await dbOps.updateCard(card);
+
+            if (state.uiSettings.learningMode === 'card') {
+                 setTimeout(() => showNextCardOrFinish(), 500);
+            }
+        };
+
+        const showNextCardOrFinish = async () => {
+            state.studySession.currentIndex++;
+            if (state.studySession.currentIndex >= state.studySession.cards.length) {
+                if (state.uiSettings.learningMode === 'quiz') {
+                    const { length } = state.studySession.cards;
+                    const { correctAnswers } = state.studySession;
+                    const accuracy = length > 0 ? Math.round((correctAnswers / length) * 100) : 0;
+                    showToast(`セッション終了！ 正解率: ${accuracy}%`);
+                } else {
+                    showToast(`セッション終了！`);
+                }
+                await refreshDecks();
+                showScreen('home');
+            } else {
+                state.uiSettings.learningMode === 'card' ? showFlashcard() : showQuiz();
+            }
+        };
+
+        const updateRecommendationsAndProgress = async () => {
+            const allCards = await dbOps.getAllCards();
+            const now = Date.now();
+            
+            const reviewCardsByDeck = {};
+            const nigateCardsByDeck = {};
+            const progressData = {};
+
+            for (const card of allCards) {
+                if (!progressData[card.deckId]) {
+                    progressData[card.deckId] = { mastered: 0, total: 0 };
+                }
+                progressData[card.deckId].total++;
+                if ((card.consecutiveCorrect || 0) >= 3) {
+                    progressData[card.deckId].mastered++;
+                }
+
+                if ((card.nextReviewDate || 0) <= now) {
+                    if(!reviewCardsByDeck[card.deckId]) reviewCardsByDeck[card.deckId] = 0;
+                    reviewCardsByDeck[card.deckId]++;
+                }
+                if ((card.nigatescore || 0) >= 5) {
+                    if(!nigateCardsByDeck[card.deckId]) nigateCardsByDeck[card.deckId] = 0;
+                    nigateCardsByDeck[card.deckId]++;
+                }
+            }
+            
+            for (const deck of state.allDecksCache) {
+                const prog = progressData[deck.id];
+                const newProgress = (prog && prog.total > 0) ? Math.round((prog.mastered / prog.total) * 100) : 0;
+                if (deck.progress !== newProgress) {
+                    deck.progress = newProgress;
+                    await dbOps.updateDeck(deck);
+                }
+            }
+            
+            const recommendGrid = document.getElementById('recommend-grid');
+            const recommendDeckIds = new Set([...Object.keys(reviewCardsByDeck).map(Number), ...Object.keys(nigateCardsByDeck).map(Number)]);
+
+            recommendGrid.innerHTML = '';
+            if (recommendDeckIds.size === 0) {
+                recommendGrid.innerHTML = `<p class="text-[var(--text-color-secondary)] col-span-full">復習するカードはありません。</p>`;
+                return;
+            }
+
+            recommendDeckIds.forEach(deckId => {
+                const deck = state.allDecksCache.find(d => d.id === deckId);
+                if (deck) {
+                    const reviewCount = reviewCardsByDeck[deckId] || 0;
+                    const nigateCount = nigateCardsByDeck[deckId] || 0;
+                    let infoText = [];
+                    if (reviewCount > 0) infoText.push(`復習: ${reviewCount}枚`);
+                    if (nigateCount > 0) infoText.push(`苦手: ${nigateCount}枚`);
+
+                    const el = document.createElement('div');
+                    el.className = 'bg-[var(--card-bg-color)] rounded-lg p-4 shadow-md cursor-pointer';
+                    el.innerHTML = `<div class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</div><div class="text-sm text-[var(--text-color-secondary)]">${infoText.join(', ')}</div>`;
+                    el.addEventListener('click', () => startLearningSession(deck.id, 'review'));
+                    recommendGrid.appendChild(el);
+                }
+            });
+        };
+        
+        const renderTagFilters = () => {
+            const tagFilterBar = document.getElementById('tag-filter-bar');
+            const allTags = new Set(state.currentDeckCards.flatMap(card => card.tags || []));
+            tagFilterBar.innerHTML = '';
+            
+            const createButton = (text, tag) => {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.dataset.tag = tag;
+                const isActive = state.currentTagFilter === tag;
+                button.className = `px-3 py-1 text-sm rounded-full ${isActive ? 'bg-[var(--primary-color)] text-[var(--primary-text-color)]' : 'bg-gray-200 text-gray-700'}`;
+                return button;
+            };
+
+            tagFilterBar.appendChild(createButton('すべて表示', null));
+            allTags.forEach(tag => tagFilterBar.appendChild(createButton(tag, tag)));
+        };
+        
+        const detectLang = (text) => {
+            const jpRegex = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+            return jpRegex.test(text) ? 'ja-JP' : 'en-US';
+        };
+
+        const speak = (text) => {
+            if (!('speechSynthesis' in window)) { return; }
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const lang = detectLang(text);
+            utterance.lang = lang;
+            
+            if (lang === 'ja-JP') {
+                utterance.rate = state.uiSettings.jaRate;
+                const voice = speechSynthesis.getVoices().find(v => v.name === state.uiSettings.jaVoice);
+                if(voice) utterance.voice = voice;
+            } else {
+                utterance.rate = state.uiSettings.enRate;
+                const voice = speechSynthesis.getVoices().find(v => v.name === state.uiSettings.enVoice);
+                if(voice) utterance.voice = voice;
+            }
+
+            speechSynthesis.speak(utterance);
+        };
+
+        const populateVoiceList = () => {
+            const enSelect = document.getElementById('en-voice-select');
+            const jaSelect = document.getElementById('ja-voice-select');
+            enSelect.innerHTML = '';
+            jaSelect.innerHTML = '';
+
+            const voices = speechSynthesis.getVoices();
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                if (voice.lang.startsWith('en')) {
+                    enSelect.appendChild(option);
+                } else if (voice.lang.startsWith('ja')) {
+                    jaSelect.appendChild(option);
+                }
+            });
+            if (state.uiSettings.enVoice) enSelect.value = state.uiSettings.enVoice;
+            if (state.uiSettings.jaVoice) jaSelect.value = state.uiSettings.jaVoice;
+        };
+        
+        const updateSettingsUI = () => {
+            document.getElementById('en-rate-slider').value = state.uiSettings.enRate;
+            document.getElementById('en-rate-value').textContent = state.uiSettings.enRate;
+            document.getElementById('ja-rate-slider').value = state.uiSettings.jaRate;
+            document.getElementById('ja-rate-value').textContent = state.uiSettings.jaRate;
+            document.getElementById('quiz-answer-speak-toggle').checked = state.uiSettings.quizAnswerReadAloud;
+            populateVoiceList();
+        };
+
+        const showConfirmModal = (title, onConfirm) => {
+            const modal = document.getElementById('confirm-modal');
+            modal.querySelector('#confirm-modal-title').textContent = title;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+
+            const okButton = modal.querySelector('#confirm-modal-ok');
+            const cancelButton = modal.querySelector('#confirm-modal-cancel');
+
+            const close = () => modal.classList.add('opacity-0', 'pointer-events-none');
+
+            okButton.onclick = () => {
+                onConfirm();
+                close();
+            };
+            cancelButton.onclick = close;
+        }
+
+        const handleCsvImport = async (file) => {
+            if (!state.currentDeckId) return showToast("単語帳を選択してください。");
+            Papa.parse(file, {
+                complete: async (results) => {
+                    let importedCount = 0;
+                    for (const row of results.data) {
+                        const front = row[0] && row[0].trim();
+                        const back = row[1] && row[1].trim();
+                        if (front && back) {
+                            await dbOps.addCard({ deckId: state.currentDeckId, front, back, createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: [] });
+                            importedCount++;
+                        }
+                    }
+                    if (importedCount > 0) {
+                        showToast(`${importedCount} 件の単語をインポートしました。`);
+                        state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
+                        renderCards();
+                        renderTagFilters();
+                    } else {
+                        showToast("インポートできる有効なデータがありませんでした。", 4000);
+                    }
+                }
+            });
+        }
+        
+        function initDOMElements() {
+            Object.assign(dom, {
+                screens: { home: document.getElementById('home-screen'), deck: document.getElementById('deck-screen'), study: document.getElementById('study-screen'), settings: document.getElementById('settings-screen') },
+                deckLoading: document.getElementById('deck-loading'),
+                deckGrid: document.getElementById('deck-grid'),
+                searchBar: document.getElementById('search-bar'),
+                deckTitleHeader: document.getElementById('deck-title-header'),
+                cardListContainer: document.getElementById('card-list-container'),
+                addCardForm: document.getElementById('add-card-form'),
+                newCardFrontInput: document.getElementById('new-card-front'),
+                newCardBackInput: document.getElementById('new-card-back'),
+                addDeckModal: document.getElementById('add-deck-modal'),
+                newDeckTitleInput: document.getElementById('new-deck-title-input'),
+                flashcardInner: document.getElementById('flashcard-inner'),
+                flashcardFront: document.getElementById('flashcard-front'),
+                flashcardBack: document.getElementById('flashcard-back'),
+                studyProgress: document.getElementById('study-progress'),
+                flashcardMode: document.getElementById('flashcard-mode'),
+                quizMode: document.getElementById('quiz-mode'),
+                flashcardControls: document.getElementById('flashcard-controls'),
+                quizQuestion: document.getElementById('quiz-question'),
+                quizOptions: document.getElementById('quiz-options'),
+                toggleMode: document.getElementById('toggle-mode'),
+                toggleDirection: document.getElementById('toggle-direction'),
+            });
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('add-deck-button').addEventListener('click', () => {
+                dom.addDeckModal.classList.remove('opacity-0', 'pointer-events-none');
+            });
+            document.getElementById('cancel-add-deck').addEventListener('click', () => {
+                dom.addDeckModal.classList.add('opacity-0', 'pointer-events-none');
+            });
+            document.getElementById('confirm-add-deck').addEventListener('click', async () => {
+                const title = dom.newDeckTitleInput.value.trim();
+                if (title) {
+                    await dbOps.addDeck({ title, createdAt: Date.now(), progress: 0 });
+                    await refreshDecks();
+                    dom.newDeckTitleInput.value = '';
+                    dom.addDeckModal.classList.add('opacity-0', 'pointer-events-none');
+                }
+            });
+            
+            document.getElementById('back-to-home-button').addEventListener('click', () => {
+                refreshDecks();
+                showScreen('home');
+            });
+            document.getElementById('exit-study-button').addEventListener('click', async () => {
+                await refreshDecks();
+                showScreen('home');
+            });
+            document.getElementById('settings-button').addEventListener('click', () => showScreen('settings'));
+            document.getElementById('back-to-home-from-settings').addEventListener('click', () => showScreen('home'));
+            dom.searchBar.addEventListener('input', () => renderDecks(state.allDecksCache));
+            
+            dom.addCardForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const front = dom.newCardFrontInput.value.trim();
+                const back = dom.newCardBackInput.value.trim();
+                if (front && back && state.currentDeckId) {
+                    await dbOps.addCard({ deckId: state.currentDeckId, front, back, createdAt: Date.now(), consecutiveCorrect: 0, nextReviewDate: Date.now(), nigatescore: 0, tags: [] });
+                    state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
+                    renderCards();
+                    renderTagFilters();
+                    dom.addCardForm.reset();
+                    dom.newCardFrontInput.focus();
+                }
+            });
+
+            dom.cardListContainer.addEventListener('click', async (e) => {
+                 const cardItem = e.target.closest('.card-item');
+                if (!cardItem) return;
+                const cardId = Number(cardItem.dataset.cardId);
+
+                if (e.target.closest('.delete-card-button')) {
+                    showConfirmModal("このカードを本当に削除しますか？", async () => {
+                        await dbOps.deleteCard(cardId);
+                        state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
+                        renderCards();
+                        renderTagFilters();
+                    });
+                } 
+                else if(e.target.closest('.edit-card-button')) {
+                    const card = await dbOps.getCard(cardId);
+                    cardItem.innerHTML = createCardEditView(card);
+                }
+                else if (e.target.closest('.save-card-button')) {
+                    const card = await dbOps.getCard(cardId);
+                    card.front = cardItem.querySelector('.edit-front-input').value.trim();
+                    card.back = cardItem.querySelector('.edit-back-input').value.trim();
+                    const tagsStr = cardItem.querySelector('.edit-tags-input').value.trim();
+                    card.tags = tagsStr.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean).map(t => `#${t}`);
+                    await dbOps.updateCard(card);
+                    state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
+                    renderCards();
+                    renderTagFilters();
+                }
+                else if (e.target.closest('.cancel-edit-button')) {
+                    const card = await dbOps.getCard(cardId);
+                    cardItem.innerHTML = createCardView(card);
+                }
+                else if (e.target.closest('.card-front-div')) {
+                    speak(e.target.closest('.card-front-div').querySelector('.card-front-text').textContent);
+                }
+                else if (e.target.closest('.card-back-div')) {
+                    speak(e.target.closest('.card-back-div').querySelector('.card-back-text').textContent);
+                }
+            });
+
+            document.getElementById('delete-deck-button').addEventListener('click', async () => {
+                 showConfirmModal("この単語帳と中のすべてのカードを本当に削除しますか？", async () => {
+                    if (state.currentDeckId) {
+                        await dbOps.deleteDeck(state.currentDeckId);
+                        await refreshDecks();
+                        showScreen('home');
+                    }
+                });
+            });
+
+            document.getElementById('csv-import-button').addEventListener('click', () => {
+                document.getElementById('csv-file-input').click();
+            });
+            document.getElementById('csv-file-input').addEventListener('change', (e) => {
+                if(e.target.files.length > 0) handleCsvImport(e.target.files[0]);
+                e.target.value = '';
+            });
+
+            dom.toggleMode.addEventListener('click', () => {
+                saveSetting('learningMode', state.uiSettings.learningMode === 'card' ? 'quiz' : 'card');
+                updateModeButton();
+            });
+            dom.toggleDirection.addEventListener('click', () => {
+                saveSetting('cardDirection', state.uiSettings.cardDirection === 'front' ? 'back' : 'front');
+                updateDirectionButton();
+            });
+            document.getElementById('theme-selector').addEventListener('click', (e) => {
+                const themeButton = e.target.closest('.theme-button');
+                if (themeButton && themeButton.dataset.theme) {
+                    saveSetting('theme', themeButton.dataset.theme);
+                    updateTheme();
+                }
+            });
+            
+            document.getElementById('flashcard-speak-button').addEventListener('click', (e) => {
+                 e.stopPropagation();
+                 const flashcard = document.querySelector('.flashcard');
+                 const isFlipped = flashcard.classList.contains('is-flipped');
+                 const visibleSide = isFlipped ? dom.flashcardBack : dom.flashcardFront;
+                 const text = visibleSide.textContent.trim();
+                 speak(text);
+            });
+            
+            dom.flashcardInner.addEventListener('click', (e) => {
+                e.currentTarget.parentElement.classList.toggle('is-flipped');
+            });
+            dom.quizQuestion.addEventListener('click', (e) => speak(e.target.textContent));
+            document.getElementById('study-main-content').addEventListener('click', (e) => {
+                if(state.uiSettings.learningMode === 'quiz' && state.studySession.isAnswered) {
+                    showNextCardOrFinish();
+                }
+            });
+
+            document.getElementById('familiar-button').addEventListener('click', () => processCardResult(true));
+            document.getElementById('unfamiliar-button').addEventListener('click', () => processCardResult(false));
+            document.getElementById('tag-filter-bar').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (button) {
+                    state.currentTagFilter = button.dataset.tag === 'null' ? null : button.dataset.tag;
+                    renderCards();
+                    renderTagFilters();
+                }
+            });
+
+            // Voice settings listeners
+            document.getElementById('quiz-answer-speak-toggle').addEventListener('change', (e) => saveSetting('quizAnswerReadAloud', e.target.checked));
+            document.getElementById('en-voice-select').addEventListener('change', (e) => saveSetting('enVoice', e.target.value));
+            document.getElementById('ja-voice-select').addEventListener('change', (e) => saveSetting('jaVoice', e.target.value));
+            document.getElementById('en-rate-slider').addEventListener('input', (e) => {
+                saveSetting('enRate', parseFloat(e.target.value));
+                document.getElementById('en-rate-value').textContent = e.target.value;
+            });
+             document.getElementById('ja-rate-slider').addEventListener('input', (e) => {
+                saveSetting('jaRate', parseFloat(e.target.value));
+                document.getElementById('ja-rate-value').textContent = e.target.value;
+            });
+        }
+        
+        async function initializeApp() {
+            initDOMElements();
+            loadSettings();
+            setupEventListeners();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = populateVoiceList;
+            } else {
+                populateVoiceList();
+            }
+            try {
+                await initDB();
+                await checkAndCreateSampleData();
+                await refreshDecks();
+                dom.deckLoading.style.display = 'none';
+            } catch (error) {
+                console.error("アプリの初期化に失敗しました:", error);
+                dom.deckLoading.textContent = "アプリの起動に失敗しました。";
+                dom.deckLoading.style.color = 'red';
+            }
+        }
+
+    </script>
+</body>
+</html>
