@@ -124,7 +124,7 @@
         .toast.show { opacity: 1; }
 
         .footer-button {
-            transition: background-color 0.2s, color 0.2s;
+            transition: background-color 0.2s, color 0.2s, transform 0.2s;
         }
         .footer-button.sub {
             background-color: rgba(var(--primary-color-rgb), 0.15);
@@ -432,7 +432,7 @@
         .cta-buttons .btn-secondary { background-color: var(--border-color); color: var(--text-color-light); }
         .cta-buttons .btn-tertiary { background-color: transparent; color: var(--text-color-secondary); box-shadow: none !important; }
         .cta-buttons .btn-tertiary:hover { background-color: var(--border-color); }
-        #details-modal .modal-content {
+        .modal-content {
             background-color: var(--card-bg-color);
             padding: 1.5rem;
             border-radius: 16px;
@@ -440,30 +440,41 @@
             max-width: 400px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        #details-modal .modal-header {
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
         }
-        #details-modal h4 { font-size: 1.1rem; font-weight: 600; }
-        #details-modal .close-btn { font-size: 1.5rem; color: #9ca3af; cursor: pointer; border: none; background: transparent; }
+        .modal-header h4 { font-size: 1.1rem; font-weight: 600; }
+        .modal-header .close-btn { font-size: 1.5rem; color: #9ca3af; cursor: pointer; border: none; background: transparent; }
         .result-list-container { max-height: 300px; overflow-y: auto; padding-right: 0.5rem; }
+        /* クイズの「次へ」ボタン */
+        #quiz-next-button {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        #quiz-next-button.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-color)]">
     
     <div id="toast-container"></div>
 
-    <!-- ホーム画面 -->
     <div id="home-screen" class="screen">
         <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
             <div class="container mx-auto px-4 h-16 flex justify-between items-center"><h1 class="text-xl font-bold text-[var(--header-text-color)]">単語帳くん</h1><button id="settings-button" class="text-[var(--header-text-color)] hover:opacity-75 p-2 rounded-full transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button></div>
         </header>
         <main class="container mx-auto p-4 pb-24 flex-grow">
-            <section class="mb-8">
+            <section id="recommend-section" class="mb-8">
                 <h2 class="text-lg font-bold text-[var(--primary-color)] mb-2">▼ 本日のおすすめ</h2>
-                <div id="recommend-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"><p id="recommend-loading" class="text-[var(--text-color-secondary)] col-span-full">復習するカードはありません。</p></div>
+                <div id="recommend-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
             </section>
             <section>
                 <div class="flex justify-between items-center mb-2">
@@ -484,7 +495,6 @@
             </div>
         </footer>
     </div>
-    <!-- 単語帳詳細画面 -->
     <div id="deck-screen" class="screen hidden">
         <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
             <div class="container mx-auto px-4 h-16 flex justify-between items-center">
@@ -509,7 +519,6 @@
             </form>
         </footer>
     </div>
-    <!-- 学習画面 -->
     <div id="study-screen" class="screen hidden flex flex-col h-screen">
          <header class="bg-[var(--header-bg-color)] container mx-auto px-4 h-16 flex justify-between items-center gap-4 flex-shrink-0">
              <div id="progress-container" class="progress-circle-wrapper">
@@ -523,7 +532,6 @@
              <button id="exit-study-button" class="p-2 rounded-full hover:bg-black/10 text-[var(--header-text-color)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </header>
         <main id="study-main-content" class="container mx-auto p-4 flex-grow flex flex-col items-center">
-            <!-- フラッシュカードモード -->
             <div id="flashcard-mode" class="w-full max-w-md flex-grow flex flex-col items-center justify-center">
                 <div class="flashcard aspect-[4/3] perspective-[1000px] w-full mb-4">
                     <div id="flashcard-inner" class="flashcard-inner relative w-full h-full cursor-pointer">
@@ -531,20 +539,19 @@
                         <div id="flashcard-back" class="flashcard-back absolute w-full h-full bg-[var(--card-bg-color)] shadow-lg rounded-xl text-3xl md:text-4xl text-center"></div>
                     </div>
                 </div>
-                 <div id="flashcard-controls" class="w-full flex justify-around items-center gap-4 mt-auto h-24 flex-shrink-0">
+                 <div id="flashcard-controls" class="w-full flex justify-around items-center gap-4 mt-8">
                     <button id="unfamiliar-button" class="flex flex-col items-center justify-center h-20 w-20 rounded-full border-2 border-[var(--danger-color)] text-[var(--danger-color)] font-bold shadow-sm" style="background-color: rgba(var(--danger-color-rgb), 0.1); backdrop-filter: blur(8px);"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span class="mt-1 text-xs">わからない</span></button>
+                    <button id="flashcard-speak-button" class="text-4xl text-[var(--text-color-secondary)] hover:opacity-80 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                     <button id="familiar-button" class="flex flex-col items-center justify-center h-20 w-20 rounded-full border-2 border-[var(--success-color)] text-[var(--success-color)] font-bold shadow-sm" style="background-color: rgba(var(--success-color-rgb), 0.1); backdrop-filter: blur(8px);"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="mt-1 text-xs">わかった</span></button>
                  </div>
-                 <button id="flashcard-speak-button" class="mt-4 text-4xl text-[var(--text-color-secondary)] hover:opacity-80 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
             </div>
-             <!-- クイズモード -->
-            <div id="quiz-mode" class="w-full max-w-md h-full flex-col hidden">
+             <div id="quiz-mode" class="w-full max-w-md h-full flex-col hidden">
                 <div id="quiz-question" class="w-full text-center text-3xl md:text-4xl font-semibold mb-8 cursor-pointer"></div>
                 <div id="quiz-options" class="grid grid-cols-1 gap-4 w-full"></div>
+                <button id="quiz-next-button" class="mt-8 px-8 py-3 rounded-lg font-bold text-[var(--primary-text-color)] bg-[var(--primary-color)]">次の問題へ</button>
             </div>
         </main>
     </div>
-    <!-- 設定画面 -->
     <div id="settings-screen" class="screen hidden">
         <header class="bg-[var(--header-bg-color)] shadow-md sticky top-0 z-10">
             <div class="container mx-auto px-4 h-16 flex items-center">
@@ -583,7 +590,6 @@
                     </div>
                 </div>
             </div>
-            <!-- 音声読み上げ設定 -->
             <div id="speech-settings-card" class="settings-card">
                 <h3>音声読み上げ</h3>
                 <div class="settings-row">
@@ -633,7 +639,6 @@
             </div>
         </main>
     </div>
-    <!-- リザルト画面 -->
     <div id="result-screen" class="screen hidden flex flex-col h-screen">
         <main class="container mx-auto p-4 flex-grow flex items-center">
             <div class="content-wrapper w-full">
@@ -653,10 +658,6 @@
                     <div class="result-stat-item"><div class="label">正解</div><div id="result-correct-count" class="value correct"></div></div>
                     <div class="result-stat-item"><div class="label">不正解</div><div id="result-incorrect-count" class="value incorrect"></div></div>
                 </div>
-                <div id="incorrect-review-section" class="review-section">
-                    <h4>要復習の単語</h4>
-                    <ul id="incorrect-list" class="review-list"></ul>
-                </div>
                 <div class="cta-buttons">
                     <button id="retry-incorrect-button" class="btn-primary">間違えた単語を復習</button>
                     <button id="show-details-button" class="btn-secondary">詳細</button>
@@ -666,28 +667,25 @@
         </main>
     </div>
 
-    <!-- 新規単語帳作成モーダル -->
     <div id="add-deck-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-        <div class="bg-[var(--card-bg-color)] rounded-lg p-6 w-full max-w-sm shadow-xl">
+        <div class="modal-content">
             <h3 class="text-xl font-bold mb-4">新しい単語帳を作成</h3>
             <input type="text" id="new-deck-title-input" placeholder="単語帳のタイトル" class="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
             <div class="flex justify-end gap-2">
-                <button id="cancel-add-deck" class="px-4 py-2 rounded-lg">キャンセル</button>
+                <button class="cancel-modal-button px-4 py-2 rounded-lg">キャンセル</button>
                 <button id="confirm-add-deck" class="px-4 py-2 bg-[var(--primary-color)] text-[var(--primary-text-color)] rounded-lg hover:opacity-80 transition-colors">作成</button>
             </div>
         </div>
     </div>
-    <!-- 確認モーダル -->
     <div id="confirm-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-        <div class="bg-[var(--card-bg-color)] rounded-lg p-6 w-full max-w-sm shadow-xl">
+        <div class="modal-content">
             <h3 id="confirm-modal-title" class="text-lg font-bold mb-4"></h3>
             <div class="flex justify-end gap-2">
-                <button id="confirm-modal-cancel" class="px-4 py-2 rounded-lg">キャンセル</button>
+                <button class="cancel-modal-button px-4 py-2 rounded-lg">キャンセル</button>
                 <button id="confirm-modal-ok" class="px-4 py-2 bg-[var(--danger-color)] text-white rounded-lg">OK</button>
             </div>
         </div>
     </div>
-    <!-- 詳細リストモーダル -->
     <div id="details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none">
         <div class="modal-content">
             <div class="modal-header">
@@ -707,12 +705,13 @@
 
         // --- グローバルステート ---
         let db;
+        let audioContext;
         const state = {
             allDecksCache: [],
             currentDeckId: null,
             currentDeckCards: [],
             currentTagFilter: null,
-            studySession: { cards: [], currentIndex: 0, deckId: null, startTime: 0, isAnswered: false, correctCards: [], incorrectCards: [] },
+            studySession: { cards: [], currentIndex: 0, deckId: null, startTime: 0, isAnswered: false, correctCards: [], incorrectCards: [], originalCards: [] },
             uiSettings: { 
                 theme: 'theme-light', 
                 learningMode: 'card', 
@@ -822,7 +821,15 @@
             document.body.classList.add(state.uiSettings.theme);
         }
         const updateModeButton = () => { dom.toggleMode.innerHTML = state.uiSettings.learningMode === 'card' ? '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>重ねたカードのアイコン</title><rect x="5" y="15" width="50" height="35" rx="5" fill="var(--icon-back-card-color)" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="50" height="35" rx="5" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/></svg>' : '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>選択肢グリッドのアイコン</title><rect x="10" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="38" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="33" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><g><rect x="38" y="33" width="22" height="22" rx="4" fill="var(--success-color)"/><path d="M44 44 l4 4 l8 -8" stroke="var(--primary-text-color)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>'; }
-        const updateDirectionButton = () => { dom.toggleDirection.innerHTML = state.uiSettings.cardDirection === 'front' ? `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 L 77.5 57" stroke="var(--card-bg-color)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74 57 L 77.5 60 L 81 57" stroke="var(--card-bg-color)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 L 77.5 57" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74 57 L 77.5 60 L 81 57" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>` : `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><g><path d="M 60 77.5 L 45 77.5 A 5 5 0 0 1 40 72.5 L 40 68" stroke="var(--card-bg-color)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 36.5 68 L 40 65 L 43.5 68" stroke="var(--card-bg-color)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 60 77.5 L 45 77.5 A 5 5 0 0 1 40 72.5 L 40 68" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 36.5 68 L 40 65 L 43.5 68" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`; }
+        const updateDirectionButton = () => {
+            let icon;
+            if (state.uiSettings.cardDirection === 'front') {
+                icon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+            } else {
+                icon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+            }
+            dom.toggleDirection.innerHTML = icon;
+        }
         
         const escapeHTML = (str) => typeof str === 'string' ? str.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])) : '';
         
@@ -912,9 +919,11 @@
         
         const startLearningSession = async (deckId, sessionType = 'all', cardSet = null) => {
             let cards;
+            let originalCards = [];
 
             if (cardSet) {
                 cards = [...cardSet];
+                originalCards = [...state.studySession.originalCards]; // 元のセッションの全カードリストを引き継ぐ
             } else {
                 if (sessionType === 'review') {
                     const allCards = await dbOps.getAllCards();
@@ -926,6 +935,7 @@
                         cards = cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
                     }
                 }
+                originalCards = [...cards];
             }
             
             cards.sort(() => Math.random() - 0.5);
@@ -939,7 +949,7 @@
                 showToast("学習するカードがありません。");
                 return;
             }
-            if (state.uiSettings.learningMode === 'quiz' && cards.length < 4) {
+            if (state.uiSettings.learningMode === 'quiz' && cards.length < 4 && originalCards.length < 4) {
                 showToast("クイズモードには最低4枚のカードが必要です。");
                 return;
             }
@@ -952,6 +962,8 @@
                 correctCards: [],
                 incorrectCards: [],
                 isAnswered: false,
+                sessionType: sessionType,
+                originalCards: originalCards.length > 0 ? originalCards : cards
             };
             
             showScreen('study');
@@ -1003,6 +1015,7 @@
         const showQuiz = () => {
             if(state.studySession.currentIndex >= state.studySession.cards.length) return;
             state.studySession.isAnswered = false;
+            document.getElementById('quiz-next-button').classList.remove('visible');
             const quizQuestionEl = dom.quizQuestion;
             const quizOptionsEl = dom.quizOptions;
 
@@ -1013,13 +1026,14 @@
             }
             const questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
             const correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
-            const options = state.studySession.cards
+            
+            const distractors = state.studySession.originalCards
                 .filter(c => c.id !== card.id)
-                .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front)
                 .sort(() => 0.5 - Math.random())
                 .slice(0, 3)
-                .concat(correctAnswer)
-                .sort(() => 0.5 - Math.random());
+                .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front);
+
+            const options = [...new Set([correctAnswer, ...distractors])].sort(() => 0.5 - Math.random());
             
             quizQuestionEl.textContent = questionText;
             quizOptionsEl.innerHTML = '';
@@ -1041,8 +1055,11 @@
                 return;
             }
             state.studySession.isAnswered = true;
+            document.getElementById('quiz-next-button').classList.add('visible');
 
             const quizOptionsEl = dom.quizOptions;
+            const wasCorrect = selected === correct;
+
              Array.from(quizOptionsEl.children).forEach(btn => {
                 const isCorrect = btn.textContent === correct;
                 const isSelected = btn.textContent === selected;
@@ -1056,10 +1073,11 @@
                     btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
                 }
             });
-            const wasCorrect = selected === correct;
-            if (wasCorrect && state.uiSettings.quizAnswerReadAloud) {
+            
+            if (state.uiSettings.quizAnswerReadAloud) {
                 speak(correct);
             }
+            playSound(wasCorrect);
             processCardResult(wasCorrect);
         };
 
@@ -1073,6 +1091,11 @@
                 state.studySession.incorrectCards.push(card);
             }
             
+            if(state.studySession.sessionType === 'retry') {
+                setTimeout(() => showNextCardOrFinish(), 1200); // Wait for sound
+                return;
+            }
+
             let scoreChange = 0;
             if (state.uiSettings.learningMode === 'quiz') {
                 const time = (Date.now() - state.studySession.startTime) / 1000;
@@ -1091,10 +1114,6 @@
             card.history = [wasCorrect, ...(card.history || [])].slice(0, 3);
             
             await dbOps.updateCard(card);
-
-            if (state.uiSettings.learningMode === 'card') {
-                 setTimeout(() => showNextCardOrFinish(), 200);
-            }
         };
         
         const showNextCardOrFinish = async () => {
@@ -1115,33 +1134,20 @@
             const minutes = Math.floor(time / 60);
             const seconds = time % 60;
             
-            const fill = document.getElementById('result-progress-fill');
+            const fill = dom.resultScreen.fill;
             const circumference = 2 * Math.PI * 73;
             fill.style.strokeDasharray = circumference;
             requestAnimationFrame(() => {
                 fill.style.strokeDashoffset = circumference * (1 - (accuracy / 100));
             });
             
-            document.getElementById('result-accuracy-percent').textContent = `${accuracy}%`;
-            document.getElementById('result-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            document.getElementById('result-correct-count').textContent = correctCards.length;
-            document.getElementById('result-incorrect-count').textContent = incorrectCards.length;
-
-            const incorrectList = document.getElementById('incorrect-list');
-            incorrectList.innerHTML = '';
-            if (incorrectCards.length > 0) {
-                document.getElementById('incorrect-review-section').style.display = 'block';
-                incorrectCards.forEach(card => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span class="front">${escapeHTML(card.front)}</span><span class="back">${escapeHTML(card.back)}</span>`;
-                    incorrectList.appendChild(li);
-                });
-            } else {
-                document.getElementById('incorrect-review-section').style.display = 'none';
-            }
+            dom.resultScreen.accuracyPercent.textContent = `${accuracy}%`;
+            dom.resultScreen.time.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            dom.resultScreen.correctCount.textContent = correctCards.length;
+            dom.resultScreen.incorrectCount.textContent = incorrectCards.length;
             
-            document.getElementById('retry-incorrect-button').style.display = incorrectCards.length > 0 ? 'block' : 'none';
-            document.getElementById('show-details-button').style.display = cards.length > 0 ? 'block' : 'none';
+            dom.resultScreen.retryButton.style.display = incorrectCards.length > 0 ? 'block' : 'none';
+            dom.resultScreen.detailsButton.style.display = cards.length > 0 ? 'block' : 'none';
 
             showScreen('result');
         };
@@ -1151,7 +1157,6 @@
             const now = Date.now();
             
             const reviewCardsByDeck = {};
-            const nigateCardsByDeck = {};
             const progressData = {};
 
             for (const card of allCards) {
@@ -1163,13 +1168,9 @@
                     progressData[card.deckId].mastered++;
                 }
 
-                if ((card.nextReviewDate || 0) <= now) {
+                if ((card.nextReviewDate || 0) <= now || (card.nigatescore || 0) >= 5) {
                     if(!reviewCardsByDeck[card.deckId]) reviewCardsByDeck[card.deckId] = 0;
                     reviewCardsByDeck[card.deckId]++;
-                }
-                if ((card.nigatescore || 0) >= 5) {
-                    if(!nigateCardsByDeck[card.deckId]) nigateCardsByDeck[card.deckId] = 0;
-                    nigateCardsByDeck[card.deckId]++;
                 }
             }
             
@@ -1183,26 +1184,24 @@
             }
             
             const recommendGrid = document.getElementById('recommend-grid');
-            const recommendDeckIds = new Set([...Object.keys(reviewCardsByDeck).map(Number), ...Object.keys(nigateCardsByDeck).map(Number)]);
-
-            recommendGrid.innerHTML = '';
-            if (recommendDeckIds.size === 0) {
-                recommendGrid.innerHTML = `<p class="text-[var(--text-color-secondary)] col-span-full">復習するカードはありません。</p>`;
+            const recommendSection = document.getElementById('recommend-section');
+            recommendGrid.innerHTML = ''; 
+            
+            const recommendDeckIds = Object.keys(reviewCardsByDeck).map(Number);
+            
+            if (recommendDeckIds.length === 0) {
+                 recommendSection.style.display = 'none';
                 return;
             }
-
+            
+            recommendSection.style.display = 'block';
             recommendDeckIds.forEach(deckId => {
                 const deck = state.allDecksCache.find(d => d.id === deckId);
                 if (deck) {
                     const reviewCount = reviewCardsByDeck[deckId] || 0;
-                    const nigateCount = nigateCardsByDeck[deckId] || 0;
-                    let infoText = [];
-                    if (reviewCount > 0) infoText.push(`復習: ${reviewCount}枚`);
-                    if (nigateCount > 0) infoText.push(`苦手: ${nigateCount}枚`);
-
                     const el = document.createElement('div');
                     el.className = 'bg-[var(--card-bg-color)] rounded-lg p-4 shadow-md cursor-pointer';
-                    el.innerHTML = `<div class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</div><div class="text-sm text-[var(--text-color-secondary)]">${infoText.join(', ')}</div>`;
+                    el.innerHTML = `<div class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</div><div class="text-sm text-[var(--text-color-secondary)]">復習: ${reviewCount}枚</div>`;
                     el.addEventListener('click', () => startLearningSession(deck.id, 'review'));
                     recommendGrid.appendChild(el);
                 }
@@ -1232,9 +1231,32 @@
             return jpRegex.test(text) ? 'ja-JP' : 'en-US';
         };
 
+        const playSound = (isCorrect) => {
+            if (!audioContext || !state.uiSettings.speechEnabled) return;
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            const duration = isCorrect ? 0.2 : 0.4;
+            oscillator.type = isCorrect ? 'sine' : 'sawtooth';
+            oscillator.frequency.setValueAtTime(isCorrect ? 800 : 200, now);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+            
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+        };
+
+
         const speak = (text) => {
-            if (!state.uiSettings.speechEnabled || !('speechSynthesis' in window)) { return; }
-            speechSynthesis.cancel();
+            if (!state.uiSettings.speechEnabled || !('speechSynthesis' in window) || speechSynthesis.speaking) { return; }
             const utterance = new SpeechSynthesisUtterance(text);
             const lang = detectLang(text);
             utterance.lang = lang;
@@ -1329,15 +1351,12 @@
             modal.classList.remove('opacity-0', 'pointer-events-none');
 
             const okButton = modal.querySelector('#confirm-modal-ok');
-            const cancelButton = modal.querySelector('#confirm-modal-cancel');
-
-            const close = () => modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.cancel-modal-button').onclick = () => modal.classList.add('opacity-0', 'pointer-events-none');
 
             okButton.onclick = () => {
                 onConfirm();
-                close();
+                modal.classList.add('opacity-0', 'pointer-events-none');
             };
-            cancelButton.onclick = close;
         }
 
         const handleCsvImport = async (file) => {
@@ -1389,12 +1408,34 @@
                 quizOptions: document.getElementById('quiz-options'),
                 toggleMode: document.getElementById('toggle-mode'),
                 toggleDirection: document.getElementById('toggle-direction'),
+                resultScreen: {
+                    fill: document.getElementById('result-progress-fill'),
+                    accuracyPercent: document.getElementById('result-accuracy-percent'),
+                    time: document.getElementById('result-time'),
+                    correctCount: document.getElementById('result-correct-count'),
+                    incorrectCount: document.getElementById('result-incorrect-count'),
+                    retryButton: document.getElementById('retry-incorrect-button'),
+                    detailsButton: document.getElementById('show-details-button')
+                },
+                detailsModal: document.getElementById('details-modal'),
             });
         }
         
         function setupEventListeners() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.add('opacity-0', 'pointer-events-none');
+                    }
+                });
+            });
+            document.querySelectorAll('.cancel-modal-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.target.closest('.modal').classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+            
             document.getElementById('add-deck-button').addEventListener('click', () => dom.addDeckModal.classList.remove('opacity-0', 'pointer-events-none'));
-            document.getElementById('cancel-add-deck').addEventListener('click', () => dom.addDeckModal.classList.add('opacity-0', 'pointer-events-none'));
             document.getElementById('confirm-add-deck').addEventListener('click', async () => {
                 const title = dom.newDeckTitleInput.value.trim();
                 if (title) {
@@ -1495,15 +1536,21 @@
             dom.flashcardInner.addEventListener('click', (e) => {
                 e.currentTarget.parentElement.classList.toggle('is-flipped');
             });
+            document.getElementById('flashcard-speak-button').addEventListener('click', () => {
+                const isFlipped = dom.flashcardInner.parentElement.classList.contains('is-flipped');
+                const text = isFlipped ? dom.flashcardBack.textContent : dom.flashcardFront.textContent;
+                speak(text);
+            });
             document.getElementById('quiz-question').addEventListener('click', (e) => speak(e.target.textContent));
             document.getElementById('study-screen').addEventListener('click', (e) => {
                 if(state.uiSettings.learningMode === 'quiz' && state.studySession.isAnswered) {
-                    if (e.target.closest('#quiz-options button')) {
+                    if (e.target.closest('#quiz-options button, #quiz-next-button')) {
                         return;
                     }
                     showNextCardOrFinish();
                 }
             });
+            document.getElementById('quiz-next-button').addEventListener('click', showNextCardOrFinish);
 
             document.getElementById('familiar-button').addEventListener('click', () => processCardResult(true));
             document.getElementById('unfamiliar-button').addEventListener('click', () => processCardResult(false));
@@ -1547,58 +1594,63 @@
                 saveSetting('jaRate', parseFloat(e.target.value));
                 document.getElementById('ja-rate-value').textContent = e.target.value;
             });
-            
              // --- リザルト画面 & 学習中モーダルのイベントリスナー ---
             document.getElementById('result-back-to-home-button').addEventListener('click', () => showScreen('home'));
             document.getElementById('retry-incorrect-button').addEventListener('click', () => {
                 startLearningSession(state.studySession.deckId, 'retry', state.studySession.incorrectCards);
             });
-            
-            const detailsModal = document.getElementById('details-modal');
-            const showDetails = (isFinalResult) => {
-                const title = isFinalResult ? `セッション詳細 (${state.studySession.cards.length}問)` : `学習の途中結果 (${state.studySession.currentIndex}/${state.studySession.cards.length}問)`;
-                document.getElementById('details-list-title').textContent = title;
-                
-                const listEl = document.getElementById('details-list-container');
-                listEl.innerHTML = '';
-                const ul = document.createElement('ul');
-                ul.className = 'review-list';
-                
-                const correctIds = new Set(state.studySession.correctCards.map(c => c.id));
-                const incorrectIds = new Set(state.studySession.incorrectCards.map(c => c.id));
-
-                const correctIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`;
-                const incorrectIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-
-                const cardsToShow = isFinalResult ? state.studySession.cards : state.studySession.cards.slice(0, state.studySession.currentIndex);
-
-                cardsToShow.forEach(card => {
-                    const li = document.createElement('li');
-                    let icon = '';
-                    if (correctIds.has(card.id)) icon = correctIcon;
-                    else if (incorrectIds.has(card.id)) icon = incorrectIcon;
-
-                    li.innerHTML = `
-                        <div class="front-back-group">
-                            <span class="front">${escapeHTML(card.front)}</span>
-                            <span class="back">${escapeHTML(card.back)}</span>
-                        </div>
-                        <div class="flex-shrink-0">${icon}</div>
-                    `;
-                    ul.appendChild(li);
-                });
-                listEl.appendChild(ul);
-                detailsModal.classList.remove('opacity-0', 'pointer-events-none');
-            };
-
-            document.getElementById('show-details-button').addEventListener('click', () => showDetails(true));
-            document.getElementById('progress-container').addEventListener('click', () => showDetails(false));
+            document.getElementById('show-details-button').addEventListener('click', () => showDetailsModal(true));
+            document.getElementById('progress-container').addEventListener('click', () => showDetailsModal(false));
             document.getElementById('close-details-modal').addEventListener('click', () => {
-                detailsModal.classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('details-modal').classList.add('opacity-0', 'pointer-events-none');
             });
         }
         
+        const showDetailsModal = (isFinalResult) => {
+            const { cards, correctCards, incorrectCards, currentIndex } = state.studySession;
+            const currentCards = isFinalResult ? cards : cards.slice(0, currentIndex);
+            
+            if (currentCards.length === 0) {
+                showToast('まだ回答済みのカードがありません。');
+                return;
+            }
+
+            const title = isFinalResult 
+                ? `セッション詳細 (${cards.length}問)` 
+                : `学習の途中結果 (${currentIndex}/${cards.length}問)`;
+            
+            document.getElementById('details-list-title').textContent = title;
+            const listEl = document.getElementById('details-list-container');
+            listEl.innerHTML = '';
+            const ul = document.createElement('ul');
+            ul.className = 'review-list';
+            
+            const correctIds = new Set(correctCards.map(c => c.id));
+            const correctIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--success-color)" stroke="var(--card-bg-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`;
+            const incorrectIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--danger-color)" stroke="var(--card-bg-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+
+            currentCards.forEach(card => {
+                const li = document.createElement('li');
+                const isCorrect = correctIds.has(card.id);
+                li.innerHTML = `
+                    <div class="front-back-group">
+                        <span class="front">${escapeHTML(card.front)}</span>
+                        <span class="back">${escapeHTML(card.back)}</span>
+                    </div>
+                    <div class="flex-shrink-0">${isCorrect ? correctIcon : incorrectIcon}</div>
+                `;
+                ul.appendChild(li);
+            });
+            listEl.appendChild(ul);
+            document.getElementById('details-modal').classList.remove('opacity-0', 'pointer-events-none');
+        };
+
         async function initializeApp() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {
+                console.warn('Web Audio API is not supported in this browser');
+            }
             initDOMElements();
             setupEventListeners();
             loadSettings();
