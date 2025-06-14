@@ -12,23 +12,23 @@
     <style>
         body { font-family: 'Noto Sans JP', sans-serif; }
         :root, .theme-light {
-            --bg-color: #f8fafc;
+            --bg-color: #f1f5f9; /* slate-100 */
             --header-bg-color: #ffffff;
             --card-bg-color: #ffffff;
             --text-color: #1e293b;
             --text-color-secondary: #64748b;
             --header-text-color: #1e293b;
-            --primary-color: #0ea5e9;
+            --primary-color: #0ea5e9; /* sky-500 */
             --primary-color-rgb: 14, 165, 233;
             --primary-text-color: #ffffff;
-            --border-color: #e2e8f0;
+            --border-color: #e2e8f0; /* slate-200 */
             --danger-color: #ef4444;
             --danger-color-rgb: 239, 68, 68;
             --success-color: #22c55e;
             --success-color-rgb: 34, 197, 94;
             --success-bg-color: #f0fdf4;
             --danger-bg-color: #fef2f2;
-            --icon-back-card-color: #cbd5e1; /* slate-300 */
+            --icon-back-card-color: #cbd5e1;
             --footer-button-sub-hover-bg: #0ea5e9;
         }
         .theme-dark {
@@ -48,16 +48,16 @@
             --success-color-rgb: 134, 239, 172;
             --success-bg-color: #166534;
             --danger-bg-color: #7f1d1d;
-            --icon-back-card-color: #e2e8f0; /* slate-200 */
+            --icon-back-card-color: #e2e8f0;
             --footer-button-sub-hover-bg: #f97316;
         }
         .theme-sakura {
-            --header-bg-color: #ec4899;
-            --card-bg-color: #fff1f2;
             --bg-color: #fdf2f8;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
             --text-color: #832c56;
-            --text-color-secondary: #c026d3;
-            --header-text-color: #ffffff;
+            --text-color-secondary: #be185d;
+            --header-text-color: #832c56;
             --primary-color: #ec4899;
             --primary-color-rgb: 236, 72, 153;
             --primary-text-color: #ffffff;
@@ -66,12 +66,12 @@
             --footer-button-sub-hover-bg: #db2777; 
         }
         .theme-matcha {
-            --header-bg-color: #4d7c0f;
-            --card-bg-color: #f0fdf4;
-            --bg-color: #f7fee7;
-            --text-color: #3f3f46;
-            --text-color-secondary: #71717a;
-            --header-text-color: #ffffff;
+             --bg-color: #f7fee7;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #1a2e05;
+            --text-color-secondary: #3f6212;
+            --header-text-color: #1a2e05;
             --primary-color: #4d7c0f;
             --primary-color-rgb: 77, 124, 15;
             --primary-text-color: #ffffff;
@@ -80,16 +80,16 @@
             --footer-button-sub-hover-bg: #65a30d; 
         }
         .theme-mizu {
-            --header-bg-color: #06b6d4;
-            --card-bg-color: #cffafe;
             --bg-color: #ecfeff;
-            --text-color: #1e40af;
+            --header-bg-color: #ffffff;
+            --card-bg-color: #ffffff;
+            --text-color: #1e3a8a;
             --text-color-secondary: #1d4ed8;
-            --header-text-color: #ffffff;
+            --header-text-color: #1e3a8a;
             --primary-color: #06b6d4;
             --primary-color-rgb: 6, 182, 212;
             --primary-text-color: #ffffff;
-            --border-color: #cffafe;
+            --border-color: #a5f3fc;
             --icon-back-card-color: #67e8f9;
             --footer-button-sub-hover-bg: #0891b2; 
         }
@@ -123,46 +123,7 @@
         .toast { background-color: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 10px; opacity: 0; transition: opacity 0.5s; }
         .toast.show { opacity: 1; }
 
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 28px;
-        }
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .toggle-slider {
-            background-color: var(--primary-color);
-        }
-        input:checked + .toggle-slider:before {
-            transform: translateX(22px);
-        }
-         .footer-button {
+        .footer-button {
             transition: background-color 0.2s, color 0.2s;
         }
         .footer-button.sub {
@@ -180,7 +141,6 @@
             background-color: var(--footer-button-sub-hover-bg);
             color: var(--primary-text-color);
         }
-
         #unfamiliar-button, #familiar-button {
              backdrop-filter: blur(8px);
         }
@@ -190,6 +150,154 @@
         #familiar-button {
              background-color: rgba(var(--success-color-rgb), 0.1);
         }
+        /* --- 設定画面 新デザイン --- */
+        #settings-screen main { background-color: var(--bg-color); }
+        .settings-card {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .settings-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color-secondary);
+            margin-bottom: 0.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .settings-card > .settings-row:last-child,
+        .accordion-content > .settings-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .settings-card > div > .settings-row:first-of-type {
+            padding-top: 0;
+        }
+        .settings-label {
+            font-size: 0.95rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        .custom-toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .custom-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .custom-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .custom-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .custom-toggle input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        .custom-toggle input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .sliding-pill-control-wrapper {
+            overflow-x: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sliding-pill-control-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        .sliding-pill-control {
+            display: inline-flex;
+            position: relative;
+            background-color: var(--border-color);
+            border-radius: 999px;
+            padding: 4px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .sliding-pill-control .option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+            transition: color 0.3s ease-in-out;
+            z-index: 10;
+            position: relative;
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+        }
+        .sliding-pill-control .option.selected {
+            color: var(--primary-text-color);
+        }
+        .sliding-pill-control .pill {
+            position: absolute;
+            top: 4px;
+            left: 0;
+            width: 0;
+            height: calc(100% - 8px);
+            background: var(--primary-color);
+            border-radius: 999px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .sub-settings-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border-top-width 0.1s linear 0.4s;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: 0px solid transparent;
+        }
+        .sub-settings-panel.active {
+            max-height: 1000px; /* 十分な高さを確保 */
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+             transition: max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border-top-width 0.1s linear;
+        }
+        .accordion-header { cursor: pointer; }
+        .accordion-header .chevron { transition: transform 0.3s ease; }
+        .accordion-header.open .chevron { transform: rotate(180deg); }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding-top 0.4s ease-out;
+            padding-top: 0;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+            padding-top: 0.5rem;
+        }
+        .accordion-content .settings-row { padding-left: 1rem; }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-color)]">
@@ -287,41 +395,82 @@
             </div>
         </header>
         <main class="container mx-auto p-4">
-            <div class="mb-6">
-                <h2 class="text-lg font-bold text-[var(--primary-color)] mb-2">テーマ</h2>
-                <div id="theme-selector" class="grid grid-cols-3 gap-4">
-                    <button data-theme="theme-light" class="theme-button flex-1 p-4 rounded-lg border-2 border-[var(--border-color)]">Paper</button>
-                    <button data-theme="theme-dark" class="theme-button flex-1 p-4 rounded-lg border-2 border-slate-600 bg-[#1f2937] text-white">Midnight</button>
-                    <button data-theme="theme-sakura" class="theme-button flex-1 p-4 rounded-lg border-2 border-pink-200 bg-[#fff0f3] text-[#832c56]">Sakura</button>
-                    <button data-theme="theme-matcha" class="theme-button flex-1 p-4 rounded-lg border-2 border-green-200 bg-[#f0fdf4] text-[#14532d]">Matcha</button>
-                    <button data-theme="theme-mizu" class="theme-button flex-1 p-4 rounded-lg border-2 border-cyan-200 bg-[#ecfeff] text-[#1e3a8a]">Ocean</button>
-                    <button data-theme="theme-yuyake" class="theme-button flex-1 p-4 rounded-lg border-2 border-indigo-600 bg-[#312e81] text-orange-200">Twilight</button>
+            <div class="settings-card">
+                <h3>一般</h3>
+                <div class="settings-row">
+                    <span class="settings-label">テーマ</span>
+                    <div class="sliding-pill-control-wrapper">
+                        <div id="theme-selector" class="sliding-pill-control">
+                             <div class="pill"></div>
+                             <button class="option" data-value="theme-light">Paper</button>
+                             <button class="option" data-value="theme-dark">Midnight</button>
+                             <button class="option" data-value="theme-sakura">Sakura</button>
+                             <button class="option" data-value="theme-matcha">Matcha</button>
+                             <button class="option" data-value="theme-mizu">Ocean</button>
+                             <button class="option" data-value="theme-yuyake">Twilight</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="mb-6">
-                <h2 class="text-lg font-bold text-[var(--primary-color)] mb-4">音声読み上げ</h2>
-                <div class="flex items-center justify-between mb-4">
-                    <label for="quiz-answer-speak-toggle">解答を読み上げる</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="quiz-answer-speak-toggle">
-                        <span class="toggle-slider"></span>
+            <div class="settings-card">
+                <h3>学習設定</h3>
+                <div class="settings-row">
+                    <span class="settings-label">出題数</span>
+                    <div id="question-count-buttons" class="sliding-pill-control">
+                        <div class="pill"></div>
+                        <button class="option" data-value="10">10問</button>
+                        <button class="option" data-value="20">20問</button>
+                        <button class="option" data-value="50">50問</button>
+                        <button class="option" data-value="all">すべて</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 音声読み上げ設定 -->
+            <div id="speech-settings-card" class="settings-card">
+                <h3>音声読み上げ</h3>
+                <div class="settings-row">
+                    <label for="speech-enabled-toggle" class="settings-label">音声読み上げを有効にする</label>
+                    <label class="custom-toggle">
+                        <input type="checkbox" id="speech-enabled-toggle">
+                        <span class="slider"></span>
                     </label>
                 </div>
-                <div class="mb-4">
-                    <label for="en-voice-select" class="block mb-1">英語の音声</label>
-                    <select id="en-voice-select" class="w-full p-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg-color)]"></select>
-                </div>
-                 <div class="mb-4">
-                    <label for="en-rate-slider" class="block mb-1">英語の速度: <span id="en-rate-value">1.0</span></label>
-                    <input type="range" id="en-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-full">
-                </div>
-                 <div class="mb-4">
-                    <label for="ja-voice-select" class="block mb-1">日本語の音声</label>
-                    <select id="ja-voice-select" class="w-full p-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg-color)]"></select>
-                </div>
-                 <div>
-                    <label for="ja-rate-slider" class="block mb-1">日本語の速度: <span id="ja-rate-value">1.0</span></label>
-                    <input type="range" id="ja-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                <div class="sub-settings-panel">
+                    <div class="settings-row">
+                         <label for="quiz-answer-speak-toggle" class="settings-label">解答を読み上げる</label>
+                         <label class="custom-toggle">
+                             <input type="checkbox" id="quiz-answer-speak-toggle">
+                             <span class="slider"></span>
+                         </label>
+                    </div>
+                    <div class="accordion-header settings-row" data-target="accordion-en">
+                        <span class="settings-label">英語の音声設定</span>
+                        <span class="chevron text-gray-400">▼</span>
+                    </div>
+                    <div id="accordion-en" class="accordion-content">
+                        <div class="settings-row">
+                            <label for="en-voice-select" class="settings-label">音声の種類</label>
+                            <select id="en-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
+                        </div>
+                         <div class="settings-row">
+                            <label for="en-rate-slider" class="settings-label">速度: <span id="en-rate-value">1.0</span></label>
+                            <input type="range" id="en-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
+                        </div>
+                    </div>
+                    <div class="accordion-header settings-row" data-target="accordion-ja">
+                        <span class="settings-label">日本語の音声設定</span>
+                        <span class="chevron text-gray-400">▼</span>
+                    </div>
+                     <div id="accordion-ja" class="accordion-content">
+                        <div class="settings-row">
+                            <label for="ja-voice-select" class="settings-label">音声の種類</label>
+                            <select id="ja-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
+                        </div>
+                         <div class="settings-row">
+                            <label for="ja-rate-slider" class="settings-label">速度: <span id="ja-rate-value">1.0</span></label>
+                            <input type="range" id="ja-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -367,6 +516,8 @@
                 theme: 'theme-light', 
                 learningMode: 'card', 
                 cardDirection: 'front',
+                speechEnabled: true, 
+                questionCount: 'all',
                 enRate: 1.0,
                 enVoice: null,
                 jaRate: 1.0,
@@ -458,7 +609,6 @@
             updateTheme();
             updateModeButton();
             updateDirectionButton();
-            updateSettingsUI();
         }
         
         const saveSetting = (key, value) => {
@@ -568,6 +718,14 @@
             if (state.currentTagFilter) {
                 cards = cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
             }
+            
+            cards.sort(() => Math.random() - 0.5);
+
+            const count = parseInt(state.uiSettings.questionCount, 10);
+            if (!isNaN(count) && cards.length > count) {
+                cards = cards.slice(0, count);
+            }
+
             if (cards.length === 0) {
                 showToast("学習するカードがありません。");
                 return;
@@ -577,7 +735,7 @@
                 return;
             }
             
-            state.studySession.cards = cards.sort(() => Math.random() - 0.5);
+            state.studySession.cards = cards;
             state.studySession.currentIndex = 0;
             state.studySession.correctAnswers = 0;
             state.studySession.deckId = deckId;
@@ -812,7 +970,7 @@
         };
 
         const speak = (text) => {
-            if (!('speechSynthesis' in window)) { return; }
+            if (!state.uiSettings.speechEnabled || !('speechSynthesis' in window)) { return; }
             speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             const lang = detectLang(text);
@@ -852,12 +1010,64 @@
             if (state.uiSettings.jaVoice) jaSelect.value = state.uiSettings.jaVoice;
         };
         
+        const setupSlidingPillControl = (containerId, settingKey, onUpdate) => {
+            const control = document.getElementById(containerId);
+            if (!control) return;
+
+            const pill = control.querySelector('.pill');
+            const options = control.querySelectorAll('.option');
+
+            const movePill = (target) => {
+                if (!target || !pill) return;
+                pill.style.left = `${target.offsetLeft}px`;
+                pill.style.width = `${target.offsetWidth}px`;
+                options.forEach(o => o.classList.remove('selected'));
+                target.classList.add('selected');
+            };
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    const value = option.dataset.value;
+                    saveSetting(settingKey, value);
+                    movePill(option);
+                    if (onUpdate) onUpdate();
+                });
+            });
+        };
+
         const updateSettingsUI = () => {
+            document.getElementById('speech-enabled-toggle').checked = state.uiSettings.speechEnabled;
+            document.getElementById('quiz-answer-speak-toggle').checked = state.uiSettings.quizAnswerReadAloud;
             document.getElementById('en-rate-slider').value = state.uiSettings.enRate;
             document.getElementById('en-rate-value').textContent = state.uiSettings.enRate;
             document.getElementById('ja-rate-slider').value = state.uiSettings.jaRate;
             document.getElementById('ja-rate-value').textContent = state.uiSettings.jaRate;
-            document.getElementById('quiz-answer-speak-toggle').checked = state.uiSettings.quizAnswerReadAloud;
+            
+            requestAnimationFrame(() => {
+                const themeOption = document.querySelector(`#theme-selector .option[data-value="${state.uiSettings.theme}"]`);
+                if(themeOption) {
+                    const control = document.getElementById('theme-selector');
+                    const pill = control.querySelector('.pill');
+                    pill.style.left = `${themeOption.offsetLeft}px`;
+                    pill.style.width = `${themeOption.offsetWidth}px`;
+                    control.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+                    themeOption.classList.add('selected');
+                }
+
+                const countOption = document.querySelector(`#question-count-buttons .option[data-value="${state.uiSettings.questionCount}"]`);
+                if(countOption) {
+                    const control = document.getElementById('question-count-buttons');
+                    const pill = control.querySelector('.pill');
+                    pill.style.left = `${countOption.offsetLeft}px`;
+                    pill.style.width = `${countOption.offsetWidth}px`;
+                    control.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+                    countOption.classList.add('selected');
+                }
+            });
+            
+            const speechSubPanel = document.querySelector('#speech-settings-card .sub-settings-panel');
+            speechSubPanel.classList.toggle('active', state.uiSettings.speechEnabled);
+
             populateVoiceList();
         };
 
@@ -931,12 +1141,8 @@
         }
         
         function setupEventListeners() {
-            document.getElementById('add-deck-button').addEventListener('click', () => {
-                dom.addDeckModal.classList.remove('opacity-0', 'pointer-events-none');
-            });
-            document.getElementById('cancel-add-deck').addEventListener('click', () => {
-                dom.addDeckModal.classList.add('opacity-0', 'pointer-events-none');
-            });
+            document.getElementById('add-deck-button').addEventListener('click', () => dom.addDeckModal.classList.remove('opacity-0', 'pointer-events-none'));
+            document.getElementById('cancel-add-deck').addEventListener('click', () => dom.addDeckModal.classList.add('opacity-0', 'pointer-events-none'));
             document.getElementById('confirm-add-deck').addEventListener('click', async () => {
                 const title = dom.newDeckTitleInput.value.trim();
                 if (title) {
@@ -947,15 +1153,9 @@
                 }
             });
             
-            document.getElementById('back-to-home-button').addEventListener('click', () => {
-                refreshDecks();
-                showScreen('home');
-            });
-            document.getElementById('exit-study-button').addEventListener('click', async () => {
-                await refreshDecks();
-                showScreen('home');
-            });
-            document.getElementById('settings-button').addEventListener('click', () => showScreen('settings'));
+            document.getElementById('back-to-home-button').addEventListener('click', () => { refreshDecks(); showScreen('home'); });
+            document.getElementById('exit-study-button').addEventListener('click', async () => { await refreshDecks(); showScreen('home'); });
+            document.getElementById('settings-button').addEventListener('click', () => { showScreen('settings'); updateSettingsUI(); });
             document.getElementById('back-to-home-from-settings').addEventListener('click', () => showScreen('home'));
             dom.searchBar.addEventListener('input', () => renderDecks(state.allDecksCache));
             
@@ -1039,13 +1239,6 @@
                 saveSetting('cardDirection', state.uiSettings.cardDirection === 'front' ? 'back' : 'front');
                 updateDirectionButton();
             });
-            document.getElementById('theme-selector').addEventListener('click', (e) => {
-                const themeButton = e.target.closest('.theme-button');
-                if (themeButton && themeButton.dataset.theme) {
-                    saveSetting('theme', themeButton.dataset.theme);
-                    updateTheme();
-                }
-            });
             
             dom.flashcardInner.addEventListener('click', (e) => {
                 e.currentTarget.parentElement.classList.toggle('is-flipped');
@@ -1071,7 +1264,26 @@
                 }
             });
 
-            // Voice settings listeners
+            // --- 設定画面のイベントリスナー (一度だけ登録) ---
+            setupSlidingPillControl('theme-selector', 'theme', updateTheme);
+            setupSlidingPillControl('question-count-buttons', 'questionCount');
+            const speechToggle = document.getElementById('speech-enabled-toggle');
+            const speechSubPanel = document.querySelector('#speech-settings-card .sub-settings-panel');
+            speechToggle.addEventListener('change', (e) => {
+                saveSetting('speechEnabled', e.target.checked);
+                speechSubPanel.classList.toggle('active', e.target.checked);
+            });
+
+            document.querySelectorAll('#speech-settings-card .accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    if (speechSubPanel.classList.contains('active')) {
+                        const content = document.getElementById(header.dataset.target);
+                        header.classList.toggle('open');
+                        content.classList.toggle('open');
+                    }
+                });
+            });
+
             document.getElementById('quiz-answer-speak-toggle').addEventListener('change', (e) => saveSetting('quizAnswerReadAloud', e.target.checked));
             document.getElementById('en-voice-select').addEventListener('change', (e) => saveSetting('enVoice', e.target.value));
             document.getElementById('ja-voice-select').addEventListener('change', (e) => saveSetting('jaVoice', e.target.value));
@@ -1087,8 +1299,8 @@
         
         async function initializeApp() {
             initDOMElements();
-            loadSettings();
             setupEventListeners();
+            loadSettings();
             
             if (speechSynthesis.onvoiceschanged !== undefined) {
                 speechSynthesis.onvoiceschanged = populateVoiceList;
