@@ -1114,6 +1114,10 @@
             card.history = [wasCorrect, ...(card.history || [])].slice(0, 3);
             
             await dbOps.updateCard(card);
+
+            if (state.uiSettings.learningMode === 'card') {
+                 setTimeout(() => showNextCardOrFinish(), 200);
+            }
         };
         
         const showNextCardOrFinish = async () => {
