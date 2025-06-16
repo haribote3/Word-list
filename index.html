@@ -66,7 +66,7 @@
             --footer-button-sub-hover-bg: #db2777; 
         }
         .theme-matcha {
-             --bg-color: #f7fee7;
+            --bg-color: #f7fee7;
             --header-bg-color: #ffffff;
             --card-bg-color: #ffffff;
             --text-color: #1a2e05;
@@ -134,21 +134,25 @@
         .theme-sakura .footer-button.sub,
         .theme-matcha .footer-button.sub,
         .theme-mizu .footer-button.sub {
-             background-color: var(--border-color);
-             color: var(--text-color-secondary);
+            background-color: var(--border-color);
+            color: var(--text-color-secondary);
         }
         .footer-button.sub:hover, .footer-button.sub:active {
             background-color: var(--footer-button-sub-hover-bg);
             color: var(--primary-text-color);
         }
         #unfamiliar-button, #familiar-button {
-             backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+        #unfamiliar-button:disabled, #familiar-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         #unfamiliar-button {
-             background-color: rgba(var(--danger-color-rgb), 0.1);
+            background-color: rgba(var(--danger-color-rgb), 0.1);
         }
         #familiar-button {
-             background-color: rgba(var(--success-color-rgb), 0.1);
+            background-color: rgba(var(--success-color-rgb), 0.1);
         }
         /* --- 設定画面 新デザイン --- */
         #settings-screen main { background-color: var(--bg-color); }
@@ -282,7 +286,7 @@
             margin-top: 1rem;
             padding-top: 1rem;
             border-top: 1px solid var(--border-color);
-             transition: max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border-top-width 0.1s linear;
+            transition: max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border-top-width 0.1s linear;
         }
         .accordion-header { cursor: pointer; }
         .accordion-header .chevron { transition: transform 0.3s ease; }
@@ -530,7 +534,7 @@
              </div>
              <div class="flex-grow"></div>
              <button id="exit-study-button" class="p-2 rounded-full hover:bg-black/10 text-[var(--header-text-color)] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-        </header>
+         </header>
         <main id="study-main-content" class="container mx-auto p-4 flex-grow flex flex-col items-center">
             <div id="flashcard-mode" class="w-full max-w-md flex-grow flex flex-col items-center justify-center">
                 <div class="flashcard aspect-[4/3] perspective-[1000px] w-full mb-4">
@@ -539,11 +543,11 @@
                         <div id="flashcard-back" class="flashcard-back absolute w-full h-full bg-[var(--card-bg-color)] shadow-lg rounded-xl text-3xl md:text-4xl text-center"></div>
                     </div>
                 </div>
-                 <div id="flashcard-controls" class="w-full flex justify-around items-center gap-4 mt-8">
+                <div id="flashcard-controls" class="w-full flex justify-around items-center gap-4 mt-8">
                     <button id="unfamiliar-button" class="flex flex-col items-center justify-center h-20 w-20 rounded-full border-2 border-[var(--danger-color)] text-[var(--danger-color)] font-bold shadow-sm" style="background-color: rgba(var(--danger-color-rgb), 0.1); backdrop-filter: blur(8px);"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span class="mt-1 text-xs">わからない</span></button>
                     <button id="flashcard-speak-button" class="text-4xl text-[var(--text-color-secondary)] hover:opacity-80 transition-opacity"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                     <button id="familiar-button" class="flex flex-col items-center justify-center h-20 w-20 rounded-full border-2 border-[var(--success-color)] text-[var(--success-color)] font-bold shadow-sm" style="background-color: rgba(var(--success-color-rgb), 0.1); backdrop-filter: blur(8px);"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="mt-1 text-xs">わかった</span></button>
-                 </div>
+                </div>
             </div>
              <div id="quiz-mode" class="w-full max-w-md h-full flex-col hidden">
                 <div id="quiz-question" class="w-full text-center text-3xl md:text-4xl font-semibold mb-8 cursor-pointer"></div>
@@ -566,13 +570,13 @@
                     <span class="settings-label">テーマ</span>
                     <div class="sliding-pill-control-wrapper">
                         <div id="theme-selector" class="sliding-pill-control">
-                             <div class="pill"></div>
-                             <button class="option" data-value="theme-light">Paper</button>
-                             <button class="option" data-value="theme-dark">Midnight</button>
-                             <button class="option" data-value="theme-sakura">Sakura</button>
-                             <button class="option" data-value="theme-matcha">Matcha</button>
-                             <button class="option" data-value="theme-mizu">Ocean</button>
-                             <button class="option" data-value="theme-yuyake">Twilight</button>
+                            <div class="pill"></div>
+                            <button class="option" data-value="theme-light">Paper</button>
+                            <button class="option" data-value="theme-dark">Midnight</button>
+                            <button class="option" data-value="theme-sakura">Sakura</button>
+                            <button class="option" data-value="theme-matcha">Matcha</button>
+                            <button class="option" data-value="theme-mizu">Ocean</button>
+                            <button class="option" data-value="theme-yuyake">Twilight</button>
                         </div>
                     </div>
                 </div>
@@ -601,11 +605,11 @@
                 </div>
                 <div class="sub-settings-panel">
                     <div class="settings-row">
-                         <label for="quiz-answer-speak-toggle" class="settings-label">解答を読み上げる</label>
-                         <label class="custom-toggle">
-                             <input type="checkbox" id="quiz-answer-speak-toggle">
-                             <span class="slider"></span>
-                         </label>
+                        <label for="quiz-answer-speak-toggle" class="settings-label">解答を読み上げる</label>
+                        <label class="custom-toggle">
+                            <input type="checkbox" id="quiz-answer-speak-toggle">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                     <div class="accordion-header settings-row" data-target="accordion-en">
                         <span class="settings-label">英語の音声設定</span>
@@ -616,7 +620,7 @@
                             <label for="en-voice-select" class="settings-label">音声の種類</label>
                             <select id="en-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
                         </div>
-                         <div class="settings-row">
+                        <div class="settings-row">
                             <label for="en-rate-slider" class="settings-label">速度: <span id="en-rate-value">1.0</span></label>
                             <input type="range" id="en-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
                         </div>
@@ -630,7 +634,7 @@
                             <label for="ja-voice-select" class="settings-label">音声の種類</label>
                             <select id="ja-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
                         </div>
-                         <div class="settings-row">
+                        <div class="settings-row">
                             <label for="ja-rate-slider" class="settings-label">速度: <span id="ja-rate-value">1.0</span></label>
                             <input type="range" id="ja-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
                         </div>
@@ -643,7 +647,7 @@
         <main class="container mx-auto p-4 flex-grow flex items-center">
             <div class="content-wrapper w-full">
                 <h2 class="text-2xl font-bold text-center mb-2">学習結果</h2>
-                 <div id="result-progress-ring" class="progress-ring">
+                <div id="result-progress-ring" class="progress-ring">
                     <div class="progress-ring-text">
                         <div id="result-accuracy-percent" class="percent"></div>
                         <div class="label">正解率</div>
@@ -653,7 +657,7 @@
                         <circle id="result-progress-fill" class="fill" cx="80" cy="80" r="73"></circle>
                     </svg>
                 </div>
-                 <div class="result-stats">
+                <div class="result-stats">
                     <div class="result-stat-item"><div class="label">学習時間</div><div id="result-time" class="value"></div></div>
                     <div class="result-stat-item"><div class="label">正解</div><div id="result-correct-count" class="value correct"></div></div>
                     <div class="result-stat-item"><div class="label">不正解</div><div id="result-incorrect-count" class="value incorrect"></div></div>
@@ -778,7 +782,7 @@
              Object.values(dom.screens).forEach(s => s.classList.add('hidden'));
              const targetScreen = document.getElementById(`${screenName}-screen`);
              if(targetScreen) targetScreen.classList.remove('hidden');
-        }
+         }
 
         const showToast = (message, duration = 3000) => {
             const toastContainer = document.getElementById('toast-container');
@@ -850,7 +854,7 @@
                  el.addEventListener('click', () => showDeckScreen(deck.id, deck.title));
                  dom.deckGrid.appendChild(el);
              });
-        }
+         }
 
         const refreshDecks = async () => {
             const decks = await dbOps.getDecks();
@@ -972,7 +976,7 @@
                 dom.quizMode.style.display = 'none';
                 showFlashcard();
             } else {
-                 dom.flashcardMode.style.display = 'none';
+                dom.flashcardMode.style.display = 'none';
                 dom.quizMode.style.display = 'flex';
                 showQuiz();
             }
@@ -998,10 +1002,6 @@
              setTimeout(() => {
                 if(state.studySession.currentIndex >= state.studySession.cards.length) return;
                 const cardData = state.studySession.cards[state.studySession.currentIndex];
-                if (!cardData) {
-                    showNextCardOrFinish();
-                    return;
-                }
                 const question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
                 const answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
                 
@@ -1009,6 +1009,10 @@
                 dom.flashcardBack.textContent = answer;
                 updateProgressDisplay();
                 speak(question);
+
+                // Re-enable buttons for the new card
+                document.getElementById('familiar-button').disabled = false;
+                document.getElementById('unfamiliar-button').disabled = false;
             }, 300);
         };
         
@@ -1061,18 +1065,18 @@
             const wasCorrect = selected === correct;
 
              Array.from(quizOptionsEl.children).forEach(btn => {
-                const isCorrect = btn.textContent === correct;
-                const isSelected = btn.textContent === selected;
-                btn.disabled = true;
-                if (isCorrect) {
-                    btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
-                    btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
-                }
-                if (isSelected && !isCorrect) {
-                    btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
-                    btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
-                }
-            });
+                 const isCorrect = btn.textContent === correct;
+                 const isSelected = btn.textContent === selected;
+                 btn.disabled = true;
+                 if (isCorrect) {
+                     btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
+                     btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
+                 }
+                 if (isSelected && !isCorrect) {
+                     btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
+                     btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
+                 }
+             });
             
             if (state.uiSettings.quizAnswerReadAloud) {
                 speak(correct);
@@ -1082,8 +1086,17 @@
         };
 
         const processCardResult = async (wasCorrect) => {
+            // Disable buttons to prevent double clicks
+            document.getElementById('familiar-button').disabled = true;
+            document.getElementById('unfamiliar-button').disabled = true;
+
             const card = state.studySession.cards[state.studySession.currentIndex];
-            if (!card) return;
+            if (!card) {
+                // Re-enable if we exit early
+                document.getElementById('familiar-button').disabled = false;
+                document.getElementById('unfamiliar-button').disabled = false;
+                return;
+            }
 
             if (wasCorrect) {
                 state.studySession.correctCards.push(card);
@@ -1103,7 +1116,7 @@
                 else if (time > 3) scoreChange = 2;
                 else scoreChange = -1;
             } else {
-                 scoreChange = wasCorrect ? -1 : 3;
+                scoreChange = wasCorrect ? -1 : 3;
             }
             
             card.consecutiveCorrect = wasCorrect ? (card.consecutiveCorrect || 0) + 1 : 0;
@@ -1194,7 +1207,7 @@
             const recommendDeckIds = Object.keys(reviewCardsByDeck).map(Number);
             
             if (recommendDeckIds.length === 0) {
-                 recommendSection.style.display = 'none';
+                recommendSection.style.display = 'none';
                 return;
             }
             
@@ -1471,7 +1484,7 @@
             });
 
             dom.cardListContainer.addEventListener('click', async (e) => {
-                 const cardItem = e.target.closest('.card-item');
+                const cardItem = e.target.closest('.card-item');
                 if (!cardItem) return;
                 const cardId = Number(cardItem.dataset.cardId);
 
@@ -1511,7 +1524,7 @@
             });
 
             document.getElementById('delete-deck-button').addEventListener('click', async () => {
-                 showConfirmModal("この単語帳と中のすべてのカードを本当に削除しますか？", async () => {
+                showConfirmModal("この単語帳と中のすべてのカードを本当に削除しますか？", async () => {
                     if (state.currentDeckId) {
                         await dbOps.deleteDeck(state.currentDeckId);
                         await refreshDecks();
