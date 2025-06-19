@@ -710,12 +710,13 @@
         // --- グローバルステート ---
         let db;
         let audioContext;
+        let currentSession = null; // OPTIMIZATION: Replaces state.studySession
         const state = {
             allDecksCache: [],
             currentDeckId: null,
             currentDeckCards: [],
             currentTagFilter: null,
-            studySession: { cards: [], currentIndex: 0, deckId: null, startTime: 0, isAnswered: false, correctCards: [], incorrectCards: [], originalCards: [] },
+            // studySession object is now managed by the StudySession class
             uiSettings: { 
                 theme: 'theme-light', 
                 learningMode: 'card', 
@@ -837,14 +838,21 @@
         
         const escapeHTML = (str) => typeof str === 'string' ? str.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])) : '';
         
+        /**
+         * OPTIMIZATION: Use a DocumentFragment to reduce DOM manipulations for better performance.
+         * @param {Array} decks - The array of deck objects to render.
+         */
         const renderDecks = (decks) => {
              dom.deckGrid.innerHTML = '';
+             const fragment = document.createDocumentFragment(); // Use a fragment
              const term = dom.searchBar.value.toLowerCase();
              const filtered = decks.filter(d => d.title.toLowerCase().includes(term));
+             
              if (filtered.length === 0) {
                  dom.deckGrid.innerHTML = `<p class="text-[var(--text-color-secondary)] col-span-full">単語帳がありません。</p>`;
                  return;
              }
+
              filtered.forEach(deck => {
                  const progress = deck.progress || 0;
                  const el = document.createElement('div');
@@ -852,14 +860,16 @@
                  el.innerHTML = `<div><h3 class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</h3><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-[var(--primary-color)] h-2.5 rounded-full" style="width: ${progress}%"></div></div></div><div class="flex justify-between items-center text-sm text-[var(--text-color-secondary)]"><span>進捗: ${progress}%</span><button data-deck-id="${deck.id}" class="play-button text-xl text-[var(--primary-color)] font-bold">▶</button></div>`;
                  el.querySelector('.play-button').addEventListener('click', (e) => { e.stopPropagation(); startLearningSession(deck.id, 'all'); });
                  el.addEventListener('click', () => showDeckScreen(deck.id, deck.title));
-                 dom.deckGrid.appendChild(el);
+                 fragment.appendChild(el);
              });
+
+             dom.deckGrid.appendChild(fragment); // Append once
          }
 
         const refreshDecks = async () => {
-            const decks = await dbOps.getDecks();
-            state.allDecksCache = decks.sort((a, b) => b.createdAt - a.createdAt);
-            await updateRecommendationsAndProgress();
+            state.allDecksCache = await dbOps.getDecks();
+            state.allDecksCache.sort((a, b) => b.createdAt - a.createdAt);
+            await updateRecommendations();
             renderDecks(state.allDecksCache);
         }
 
@@ -891,6 +901,8 @@
 
         const renderCards = () => {
             dom.cardListContainer.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+
             if (state.currentDeckCards.length === 0) {
                 dom.cardListContainer.innerHTML = `<p class="text-[var(--text-color-secondary)] text-center mt-8">単語がありません。</p>`;
                 return;
@@ -904,8 +916,9 @@
                 cardItem.className = 'card-item bg-[var(--card-bg-color)] rounded-lg p-3 mb-3 shadow-sm';
                 cardItem.dataset.cardId = card.id;
                 cardItem.innerHTML = createCardView(card);
-                dom.cardListContainer.appendChild(cardItem);
+                fragment.appendChild(cardItem);
             });
+            dom.cardListContainer.appendChild(fragment);
         }
 
         const createCardView = (card) => {
@@ -922,69 +935,20 @@
         };
         
         const startLearningSession = async (deckId, sessionType = 'all', cardSet = null) => {
-            let cards;
-            let originalCards = [];
-
-            if (cardSet) {
-                cards = [...cardSet];
-                originalCards = [...state.studySession.originalCards]; // 元のセッションの全カードリストを引き継ぐ
-            } else {
-                if (sessionType === 'review') {
-                    const allCards = await dbOps.getAllCards();
-                    const now = Date.now();
-                    cards = allCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
-                } else {
-                     cards = await dbOps.getCardsByDeck(deckId);
-                    if (state.currentTagFilter) {
-                        cards = cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
-                    }
-                }
-                originalCards = [...cards];
-            }
-            
-            cards.sort(() => Math.random() - 0.5);
-
-            const count = parseInt(state.uiSettings.questionCount, 10);
-            if (sessionType !== 'retry' && !isNaN(count) && cards.length > count) {
-                cards = cards.slice(0, count);
-            }
-
-            if (cards.length === 0) {
-                showToast("学習するカードがありません。");
-                return;
-            }
-            if (state.uiSettings.learningMode === 'quiz' && cards.length < 4 && originalCards.length < 4) {
-                showToast("クイズモードには最低4枚のカードが必要です。");
-                return;
-            }
-            
-            state.studySession = {
-                cards: cards,
-                currentIndex: 0,
-                deckId: deckId,
-                startTime: Date.now(),
-                correctCards: [],
-                incorrectCards: [],
-                isAnswered: false,
-                sessionType: sessionType,
-                originalCards: originalCards.length > 0 ? originalCards : cards
-            };
-            
-            showScreen('study');
-            if (state.uiSettings.learningMode === 'card') {
-                dom.flashcardMode.style.display = 'flex';
-                dom.quizMode.style.display = 'none';
-                showFlashcard();
-            } else {
-                dom.flashcardMode.style.display = 'none';
-                dom.quizMode.style.display = 'flex';
-                showQuiz();
-            }
+             currentSession = new StudySession(deckId, sessionType);
+             await currentSession.prepare(cardSet);
+             if (currentSession.isValid()) {
+                 currentSession.start();
+             } else {
+                 currentSession = null;
+             }
         };
 
         const updateProgressDisplay = () => {
-            const current = state.studySession.currentIndex + 1;
-            const total = state.studySession.cards.length;
+            if (!currentSession) return;
+            const { currentIndex, cards } = currentSession;
+            const current = currentIndex + 1;
+            const total = cards.length;
             const percentage = total > 0 ? (current / total) * 100 : 0;
             
             const fill = document.getElementById('progress-fill');
@@ -995,156 +959,10 @@
             fill.style.strokeDashoffset = circumference * (1 - (percentage / 100));
             text.textContent = `${current}/${total}`;
         };
-
-        const showFlashcard = () => {
-            const flashcardEl = dom.flashcardInner.parentElement;
-            flashcardEl.classList.remove('is-flipped');
-             setTimeout(() => {
-                if(state.studySession.currentIndex >= state.studySession.cards.length) return;
-                const cardData = state.studySession.cards[state.studySession.currentIndex];
-                const question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
-                const answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
-                
-                dom.flashcardFront.textContent = question;
-                dom.flashcardBack.textContent = answer;
-                updateProgressDisplay();
-                speak(question);
-
-                // Re-enable buttons for the new card
-                document.getElementById('familiar-button').disabled = false;
-                document.getElementById('unfamiliar-button').disabled = false;
-            }, 300);
-        };
         
-        const showQuiz = () => {
-            if(state.studySession.currentIndex >= state.studySession.cards.length) return;
-            state.studySession.isAnswered = false;
-            document.getElementById('quiz-next-button').classList.remove('visible');
-            const quizQuestionEl = dom.quizQuestion;
-            const quizOptionsEl = dom.quizOptions;
-
-            const card = state.studySession.cards[state.studySession.currentIndex];
-            if (!card) {
-                showNextCardOrFinish();
-                return;
-            }
-            const questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
-            const correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
-            
-            const distractors = state.studySession.originalCards
-                .filter(c => c.id !== card.id)
-                .sort(() => 0.5 - Math.random())
-                .slice(0, 3)
-                .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front);
-
-            const options = [...new Set([correctAnswer, ...distractors])].sort(() => 0.5 - Math.random());
-            
-            quizQuestionEl.textContent = questionText;
-            quizOptionsEl.innerHTML = '';
-            options.forEach(text => {
-                const button = document.createElement('button');
-                button.className = "w-full p-4 bg-[var(--card-bg-color)] border-2 border-[var(--border-color)] rounded-lg text-lg font-semibold text-center hover:border-[var(--primary-color)] relative";
-                button.textContent = text;
-                button.onclick = (e) => handleQuizAnswer(e, text, correctAnswer);
-                quizOptionsEl.appendChild(button);
-            });
-            updateProgressDisplay();
-            state.studySession.startTime = Date.now();
-            speak(questionText);
-        };
-
-        const handleQuizAnswer = (e, selected, correct) => {
-            e.stopPropagation();
-            if (state.studySession.isAnswered) {
-                return;
-            }
-            state.studySession.isAnswered = true;
-            document.getElementById('quiz-next-button').classList.add('visible');
-
-            const quizOptionsEl = dom.quizOptions;
-            const wasCorrect = selected === correct;
-
-             Array.from(quizOptionsEl.children).forEach(btn => {
-                 const isCorrect = btn.textContent === correct;
-                 const isSelected = btn.textContent === selected;
-                 btn.disabled = true;
-                 if (isCorrect) {
-                     btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
-                     btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
-                 }
-                 if (isSelected && !isCorrect) {
-                     btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
-                     btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
-                 }
-             });
-            
-            if (state.uiSettings.quizAnswerReadAloud) {
-                speak(correct);
-            }
-            playSound(wasCorrect);
-            processCardResult(wasCorrect);
-        };
-
-        const processCardResult = async (wasCorrect) => {
-            // Disable buttons to prevent double clicks
-            document.getElementById('familiar-button').disabled = true;
-            document.getElementById('unfamiliar-button').disabled = true;
-
-            const card = state.studySession.cards[state.studySession.currentIndex];
-            if (!card) {
-                // Re-enable if we exit early
-                document.getElementById('familiar-button').disabled = false;
-                document.getElementById('unfamiliar-button').disabled = false;
-                return;
-            }
-
-            if (wasCorrect) {
-                state.studySession.correctCards.push(card);
-            } else {
-                state.studySession.incorrectCards.push(card);
-            }
-            
-            if(state.studySession.sessionType === 'retry') {
-                setTimeout(() => showNextCardOrFinish(), 1200); // Wait for sound
-                return;
-            }
-
-            let scoreChange = 0;
-            if (state.uiSettings.learningMode === 'quiz') {
-                const time = (Date.now() - state.studySession.startTime) / 1000;
-                if(!wasCorrect) scoreChange = 5;
-                else if (time > 3) scoreChange = 2;
-                else scoreChange = -1;
-            } else {
-                scoreChange = wasCorrect ? -1 : 3;
-            }
-            
-            card.consecutiveCorrect = wasCorrect ? (card.consecutiveCorrect || 0) + 1 : 0;
-            card.nigatescore = Math.max(0, (card.nigatescore || 0) + scoreChange);
-            const interval = wasCorrect ? Math.pow(2, Math.max(0, card.consecutiveCorrect - 1)) : 1;
-            card.nextReviewDate = Date.now() + interval * 24 * 60 * 60 * 1000;
-            
-            card.history = [wasCorrect, ...(card.history || [])].slice(0, 3);
-            
-            await dbOps.updateCard(card);
-
-            if (state.uiSettings.learningMode === 'card') {
-                 setTimeout(() => showNextCardOrFinish(), 200);
-            }
-        };
-        
-        const showNextCardOrFinish = async () => {
-            state.studySession.currentIndex++;
-            if (state.studySession.currentIndex >= state.studySession.cards.length) {
-                await refreshDecks();
-                showResultScreen();
-            } else {
-                state.uiSettings.learningMode === 'card' ? showFlashcard() : showQuiz();
-            }
-        };
-        
-        const showResultScreen = () => {
-            const { correctCards, incorrectCards, cards, startTime } = state.studySession;
+        const showResultScreen = async () => {
+            if (!currentSession) return;
+            const { correctCards, incorrectCards, cards, startTime, deckId } = currentSession;
             const total = cards.length;
             const accuracy = total > 0 ? Math.round((correctCards.length / total) * 100) : 0;
             const time = Math.round((Date.now() - startTime) / 1000);
@@ -1167,42 +985,52 @@
             dom.resultScreen.detailsButton.style.display = cards.length > 0 ? 'block' : 'none';
 
             showScreen('result');
+            
+            // OPTIMIZATION: Update progress only for the finished deck
+            if (deckId) {
+                await updateDeckProgress(deckId);
+            }
         };
 
-        const updateRecommendationsAndProgress = async () => {
+        /**
+         * OPTIMIZATION: Update a single deck's progress. Called after a session ends.
+         * @param {number} deckId - The ID of the deck to update.
+         */
+        async function updateDeckProgress(deckId) {
+            const deck = await dbOps.getDeck(deckId);
+            if (!deck) return;
+
+            const cards = await dbOps.getCardsByDeck(deckId);
+            const total = cards.length;
+            if (total === 0) {
+                deck.progress = 0;
+            } else {
+                const mastered = cards.filter(c => (c.consecutiveCorrect || 0) >= 3).length;
+                deck.progress = Math.round((mastered / total) * 100);
+            }
+            await dbOps.updateDeck(deck);
+        }
+
+
+        const updateRecommendations = async () => {
+            // Note: This still scans all cards. For very large datasets,
+            // adding a DB index on 'nextReviewDate' would be the next optimization step.
             const allCards = await dbOps.getAllCards();
             const now = Date.now();
             
             const reviewCardsByDeck = {};
-            const progressData = {};
 
             for (const card of allCards) {
-                if (!progressData[card.deckId]) {
-                    progressData[card.deckId] = { mastered: 0, total: 0 };
-                }
-                progressData[card.deckId].total++;
-                if ((card.consecutiveCorrect || 0) >= 3) {
-                    progressData[card.deckId].mastered++;
-                }
-
                 if ((card.nextReviewDate || 0) <= now || (card.nigatescore || 0) >= 5) {
                     if(!reviewCardsByDeck[card.deckId]) reviewCardsByDeck[card.deckId] = 0;
                     reviewCardsByDeck[card.deckId]++;
                 }
             }
             
-            for (const deck of state.allDecksCache) {
-                const prog = progressData[deck.id];
-                const newProgress = (prog && prog.total > 0) ? Math.round((prog.mastered / prog.total) * 100) : 0;
-                if (deck.progress !== newProgress) {
-                    deck.progress = newProgress;
-                    await dbOps.updateDeck(deck);
-                }
-            }
-            
             const recommendGrid = document.getElementById('recommend-grid');
             const recommendSection = document.getElementById('recommend-section');
             recommendGrid.innerHTML = ''; 
+            const fragment = document.createDocumentFragment();
             
             const recommendDeckIds = Object.keys(reviewCardsByDeck).map(Number);
             
@@ -1220,9 +1048,10 @@
                     el.className = 'bg-[var(--card-bg-color)] rounded-lg p-4 shadow-md cursor-pointer';
                     el.innerHTML = `<div class="font-bold text-md mb-2 truncate">${escapeHTML(deck.title)}</div><div class="text-sm text-[var(--text-color-secondary)]">復習: ${reviewCount}枚</div>`;
                     el.addEventListener('click', () => startLearningSession(deck.id, 'review'));
-                    recommendGrid.appendChild(el);
+                    fragment.appendChild(el);
                 }
             });
+            recommendGrid.appendChild(fragment);
         };
         
         const renderTagFilters = () => {
@@ -1239,8 +1068,10 @@
                 return button;
             };
 
-            tagFilterBar.appendChild(createButton('すべて表示', null));
-            allTags.forEach(tag => tagFilterBar.appendChild(createButton(tag, tag)));
+            const fragment = document.createDocumentFragment();
+            fragment.appendChild(createButton('すべて表示', null));
+            allTags.forEach(tag => fragment.appendChild(createButton(tag, tag)));
+            tagFilterBar.appendChild(fragment);
         };
         
         const detectLang = (text) => {
@@ -1401,6 +1232,202 @@
             });
         }
         
+        /**
+         * OPTIMIZATION: A class to manage the state and logic of a study session.
+         */
+        class StudySession {
+            constructor(deckId, sessionType) {
+                this.deckId = deckId;
+                this.sessionType = sessionType;
+                this.cards = [];
+                this.originalCards = [];
+                this.currentIndex = 0;
+                this.startTime = 0;
+                this.correctCards = [];
+                this.incorrectCards = [];
+                this.isAnswered = false;
+                this.isProcessing = false;
+            }
+
+            async prepare(cardSet = null) {
+                if (cardSet) {
+                    this.cards = [...cardSet];
+                } else {
+                    if (this.sessionType === 'review') {
+                        const allCards = await dbOps.getAllCards();
+                        const now = Date.now();
+                        this.cards = allCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
+                    } else {
+                        this.cards = await dbOps.getCardsByDeck(this.deckId);
+                        if (state.currentTagFilter) {
+                            this.cards = this.cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
+                        }
+                    }
+                }
+
+                this.originalCards = [...this.cards];
+                this.cards.sort(() => Math.random() - 0.5);
+
+                const count = parseInt(state.uiSettings.questionCount, 10);
+                if (this.sessionType !== 'retry' && !isNaN(count) && this.cards.length > count) {
+                    this.cards = this.cards.slice(0, count);
+                }
+            }
+
+            isValid() {
+                if (this.cards.length === 0) {
+                    showToast("学習するカードがありません。");
+                    return false;
+                }
+                if (state.uiSettings.learningMode === 'quiz' && this.originalCards.length < 4) {
+                    showToast("クイズモードには最低4枚のカードが必要です。");
+                    return false;
+                }
+                return true;
+            }
+
+            start() {
+                this.startTime = Date.now();
+                showScreen('study');
+                if (state.uiSettings.learningMode === 'card') {
+                    dom.flashcardMode.style.display = 'flex';
+                    dom.quizMode.style.display = 'none';
+                    this.showFlashcard();
+                } else {
+                    dom.flashcardMode.style.display = 'none';
+                    dom.quizMode.style.display = 'flex';
+                    this.showQuiz();
+                }
+            }
+
+            showFlashcard() {
+                dom.flashcardInner.parentElement.classList.remove('is-flipped');
+                setTimeout(() => {
+                    if (this.currentIndex >= this.cards.length) return;
+                    const cardData = this.cards[this.currentIndex];
+                    const question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
+                    const answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
+                    
+                    dom.flashcardFront.textContent = question;
+                    dom.flashcardBack.textContent = answer;
+                    updateProgressDisplay();
+                    speak(question);
+                    this.isProcessing = false;
+                }, 300);
+            }
+
+            showQuiz() {
+                if (this.currentIndex >= this.cards.length) return;
+                this.isAnswered = false;
+                dom.quizNextButton.classList.remove('visible');
+                
+                const card = this.cards[this.currentIndex];
+                const questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
+                const correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
+                
+                const distractors = this.originalCards
+                    .filter(c => c.id !== card.id)
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 3)
+                    .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front);
+
+                const options = [...new Set([correctAnswer, ...distractors])].sort(() => 0.5 - Math.random());
+                
+                dom.quizQuestion.textContent = questionText;
+                dom.quizOptions.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                options.forEach(text => {
+                    const button = document.createElement('button');
+                    button.className = "w-full p-4 bg-[var(--card-bg-color)] border-2 border-[var(--border-color)] rounded-lg text-lg font-semibold text-center hover:border-[var(--primary-color)] relative";
+                    button.textContent = text;
+                    button.onclick = (e) => this.handleQuizAnswer(e, text, correctAnswer);
+                    fragment.appendChild(button);
+                });
+                dom.quizOptions.appendChild(fragment);
+
+                updateProgressDisplay();
+                speak(questionText);
+            }
+
+            handleQuizAnswer(e, selected, correct) {
+                e.stopPropagation();
+                if (this.isAnswered) return;
+                this.isAnswered = true;
+                dom.quizNextButton.classList.add('visible');
+
+                const wasCorrect = selected === correct;
+                Array.from(dom.quizOptions.children).forEach(btn => {
+                    const isCorrect = btn.textContent === correct;
+                    const isSelected = btn.textContent === selected;
+                    btn.disabled = true;
+                    if (isCorrect) {
+                        btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
+                        btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
+                    }
+                    if (isSelected && !isCorrect) {
+                        btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
+                        btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
+                    }
+                });
+                
+                if (state.uiSettings.quizAnswerReadAloud) speak(correct);
+                playSound(wasCorrect);
+                this.processResult(wasCorrect);
+            }
+
+            async processResult(wasCorrect) {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+
+                try {
+                    const card = this.cards[this.currentIndex];
+                    if (!card) return;
+
+                    if (wasCorrect) {
+                        this.correctCards.push(card);
+                    } else {
+                        this.incorrectCards.push(card);
+                    }
+                    
+                    let scoreChange = 0;
+                    if (state.uiSettings.learningMode === 'quiz') {
+                        const time = (Date.now() - this.startTime) / 1000;
+                        if(!wasCorrect) scoreChange = 5;
+                        else if (time > 3) scoreChange = 2;
+                        else scoreChange = -1;
+                    } else {
+                        scoreChange = wasCorrect ? -1 : 3;
+                    }
+                    
+                    card.consecutiveCorrect = wasCorrect ? (card.consecutiveCorrect || 0) + 1 : 0;
+                    card.nigatescore = Math.max(0, (card.nigatescore || 0) + scoreChange);
+                    const interval = wasCorrect ? Math.pow(2, Math.max(0, card.consecutiveCorrect - 1)) : 1;
+                    card.nextReviewDate = Date.now() + interval * 24 * 60 * 60 * 1000;
+                    card.history = [wasCorrect, ...(card.history || [])].slice(0, 3);
+                    
+                    await dbOps.updateCard(card);
+
+                    if (state.uiSettings.learningMode === 'card') {
+                        setTimeout(() => this.next(), 200);
+                    } else {
+                        this.isProcessing = false; // Allow manual progression
+                    }
+                } catch (error) {
+                    console.error("Error processing card result:", error);
+                    this.isProcessing = false;
+                }
+            }
+            
+            next() {
+                this.currentIndex++;
+                if (this.currentIndex >= this.cards.length) {
+                    showResultScreen();
+                } else {
+                    state.uiSettings.learningMode === 'card' ? this.showFlashcard() : this.showQuiz();
+                }
+            }
+        }
+
         function initDOMElements() {
             Object.assign(dom, {
                 screens: { home: document.getElementById('home-screen'), deck: document.getElementById('deck-screen'), study: document.getElementById('study-screen'), settings: document.getElementById('settings-screen'), result: document.getElementById('result-screen') },
@@ -1417,12 +1444,11 @@
                 flashcardInner: document.getElementById('flashcard-inner'),
                 flashcardFront: document.getElementById('flashcard-front'),
                 flashcardBack: document.getElementById('flashcard-back'),
-                studyProgress: document.getElementById('study-progress'),
                 flashcardMode: document.getElementById('flashcard-mode'),
                 quizMode: document.getElementById('quiz-mode'),
-                flashcardControls: document.getElementById('flashcard-controls'),
                 quizQuestion: document.getElementById('quiz-question'),
                 quizOptions: document.getElementById('quiz-options'),
+                quizNextButton: document.getElementById('quiz-next-button'),
                 toggleMode: document.getElementById('toggle-mode'),
                 toggleDirection: document.getElementById('toggle-direction'),
                 resultScreen: {
@@ -1554,23 +1580,24 @@
                 e.currentTarget.parentElement.classList.toggle('is-flipped');
             });
             document.getElementById('flashcard-speak-button').addEventListener('click', () => {
+                if (!currentSession) return;
                 const isFlipped = dom.flashcardInner.parentElement.classList.contains('is-flipped');
                 const text = isFlipped ? dom.flashcardBack.textContent : dom.flashcardFront.textContent;
                 speak(text);
             });
             document.getElementById('quiz-question').addEventListener('click', (e) => speak(e.target.textContent));
             document.getElementById('study-screen').addEventListener('click', (e) => {
-                if(state.uiSettings.learningMode === 'quiz' && state.studySession.isAnswered) {
+                if (currentSession && state.uiSettings.learningMode === 'quiz' && currentSession.isAnswered) {
                     if (e.target.closest('#quiz-options button, #quiz-next-button')) {
                         return;
                     }
-                    showNextCardOrFinish();
+                    currentSession.next();
                 }
             });
-            document.getElementById('quiz-next-button').addEventListener('click', showNextCardOrFinish);
+            dom.quizNextButton.addEventListener('click', () => currentSession?.next());
 
-            document.getElementById('familiar-button').addEventListener('click', () => processCardResult(true));
-            document.getElementById('unfamiliar-button').addEventListener('click', () => processCardResult(false));
+            document.getElementById('familiar-button').addEventListener('click', () => currentSession?.processResult(true));
+            document.getElementById('unfamiliar-button').addEventListener('click', () => currentSession?.processResult(false));
             document.getElementById('tag-filter-bar').addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (button) {
@@ -1614,7 +1641,9 @@
              // --- リザルト画面 & 学習中モーダルのイベントリスナー ---
             document.getElementById('result-back-to-home-button').addEventListener('click', () => showScreen('home'));
             document.getElementById('retry-incorrect-button').addEventListener('click', () => {
-                startLearningSession(state.studySession.deckId, 'retry', state.studySession.incorrectCards);
+                if(currentSession) {
+                    startLearningSession(currentSession.deckId, 'retry', currentSession.incorrectCards);
+                }
             });
             document.getElementById('show-details-button').addEventListener('click', () => showDetailsModal(true));
             document.getElementById('progress-container').addEventListener('click', () => showDetailsModal(false));
@@ -1624,8 +1653,9 @@
         }
         
         const showDetailsModal = (isFinalResult) => {
-            const { cards, correctCards, incorrectCards, currentIndex } = state.studySession;
-            const currentCards = isFinalResult ? cards : cards.slice(0, currentIndex);
+            if(!currentSession) return;
+            const { cards, correctCards, incorrectCards, currentIndex } = currentSession;
+            const currentCards = isFinalResult ? cards : cards.slice(0, currentIndex + 1);
             
             if (currentCards.length === 0) {
                 showToast('まだ回答済みのカードがありません。');
@@ -1634,7 +1664,7 @@
 
             const title = isFinalResult 
                 ? `セッション詳細 (${cards.length}問)` 
-                : `学習の途中結果 (${currentIndex}/${cards.length}問)`;
+                : `学習の途中結果 (${isFinalResult ? cards.length : currentIndex + 1}/${cards.length}問)`;
             
             document.getElementById('details-list-title').textContent = title;
             const listEl = document.getElementById('details-list-container');
