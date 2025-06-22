@@ -1254,9 +1254,10 @@
                     this.cards = [...cardSet];
                 } else {
                     if (this.sessionType === 'review') {
-                        const allCards = await dbOps.getAllCards();
+                        // FIX: Fetch cards only from the specified deck for review.
+                        const deckCards = await dbOps.getCardsByDeck(this.deckId);
                         const now = Date.now();
-                        this.cards = allCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
+                        this.cards = deckCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
                     } else {
                         this.cards = await dbOps.getCardsByDeck(this.deckId);
                         if (state.currentTagFilter) {
