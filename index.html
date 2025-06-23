@@ -493,7 +493,7 @@
         </main>
         <footer class="fixed bottom-0 left-0 right-0 bg-[var(--header-bg-color)] border-t border-[var(--border-color)]">
             <div class="container mx-auto px-4 h-20 flex justify-around items-center">
-                <div class="flex flex-col items-center"><label class="text-xs text-[var(--header-text-color)] mb-1">出題</label><button id="toggle-direction" class="footer-button sub p-2 rounded-full w-14 h-14 flex items-center justify-center"></button></div>
+                <div class="flex flex-col items-center"><label class="text-xs text-[var(--header-text-color)] mb-1">出題</label><button id="home-toggle-direction" class="footer-button sub p-2 rounded-full w-14 h-14 flex items-center justify-center"></button></div>
                 <div class="flex flex-col items-center"><label class="text-xs text-[var(--header-text-color)] mb-1">モード</label><button id="toggle-mode" class="footer-button sub p-2 rounded-full w-14 h-14 flex items-center justify-center"></button></div>
                 <button id="add-deck-button" class="bg-[var(--primary-color)] text-[var(--primary-text-color)] rounded-full w-14 h-14 text-4xl font-light flex items-center justify-center shadow-lg hover:opacity-80 transition-opacity">+</button>
             </div>
@@ -591,6 +591,15 @@
                         <button class="option" data-value="20">20問</button>
                         <button class="option" data-value="50">50問</button>
                         <button class="option" data-value="all">すべて</button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">出題方向</span>
+                    <div id="direction-selector" class="sliding-pill-control">
+                        <div class="pill"></div>
+                        <button class="option" data-value="front">オモテ</button>
+                        <button class="option" data-value="back">ウラ</button>
+                        <button class="option" data-value="random">ランダム</button>
                     </div>
                 </div>
             </div>
@@ -710,13 +719,12 @@
         // --- グローバルステート ---
         let db;
         let audioContext;
-        let currentSession = null; // OPTIMIZATION: Replaces state.studySession
+        let currentSession = null;
         const state = {
             allDecksCache: [],
             currentDeckId: null,
             currentDeckCards: [],
             currentTagFilter: null,
-            // studySession object is now managed by the StudySession class
             uiSettings: { 
                 theme: 'theme-light', 
                 learningMode: 'card', 
@@ -813,7 +821,7 @@
             });
             updateTheme();
             updateModeButton();
-            updateDirectionButton();
+            updateDirectionUI();
         }
         
         const saveSetting = (key, value) => {
@@ -826,16 +834,20 @@
             document.body.classList.add(state.uiSettings.theme);
         }
         const updateModeButton = () => { dom.toggleMode.innerHTML = state.uiSettings.learningMode === 'card' ? '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>重ねたカードのアイコン</title><rect x="5" y="15" width="50" height="35" rx="5" fill="var(--icon-back-card-color)" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="50" height="35" rx="5" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/></svg>' : '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>選択肢グリッドのアイコン</title><rect x="10" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="38" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="33" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><g><rect x="38" y="33" width="22" height="22" rx="4" fill="var(--success-color)"/><path d="M44 44 l4 4 l8 -8" stroke="var(--primary-text-color)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>'; }
-        const updateDirectionButton = () => {
-            let icon;
-            if (state.uiSettings.cardDirection === 'front') {
-                icon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
-            } else {
-                icon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
-            }
-            dom.toggleDirection.innerHTML = icon;
-        }
         
+        const updateDirectionUI = () => {
+            const frontIcon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+            const backIcon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
+            const randomIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>`;
+
+            const direction = state.uiSettings.cardDirection;
+            if (direction === 'front') dom.homeToggleDirection.innerHTML = frontIcon;
+            else if (direction === 'back') dom.homeToggleDirection.innerHTML = backIcon;
+            else dom.homeToggleDirection.innerHTML = randomIcon;
+            
+            updateSettingsUI();
+        }
+
         const escapeHTML = (str) => typeof str === 'string' ? str.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])) : '';
         
         const renderDecks = (decks) => {
@@ -926,8 +938,10 @@
         }
         
         const createCardEditView = (card) => {
-             const tagsStr = (card.tags || []).join(', ');
-            return `<div class="flex-1 flex flex-col gap-2"><input class="edit-front-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.front)}"><input class="edit-back-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.back)}"><input class="edit-tags-input w-full px-2 py-1 border rounded" placeholder="タグ (例: #fruit, #food)" value="${escapeHTML(tagsStr)}"></div><div class="flex flex-col gap-2 ml-2"><button class="save-card-button text-lg hover:text-[var(--success-color)]">💾</button><button class="cancel-edit-button text-lg hover:text-[var(--danger-color)]">❌</button></div>`;
+            const tagsStr = (card.tags || []).join(', ');
+            const saveIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            const cancelIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            return `<div class="flex-1 flex flex-col gap-2"><input class="edit-front-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.front)}"><input class="edit-back-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.back)}"><input class="edit-tags-input w-full px-2 py-1 border rounded" placeholder="タグ (例: #fruit, #food)" value="${escapeHTML(tagsStr)}"></div><div class="flex flex-col gap-2 ml-2"><button class="save-card-button text-green-500 hover:text-green-600 p-1">${saveIcon}</button><button class="cancel-edit-button text-red-500 hover:text-red-600 p-1">${cancelIcon}</button></div>`;
         };
         
         const startLearningSession = async (deckId, sessionType = 'all', cardSet = null) => {
@@ -1160,10 +1174,14 @@
             document.getElementById('ja-rate-value').textContent = state.uiSettings.jaRate;
             
             requestAnimationFrame(() => {
-                ['theme-selector', 'question-count-buttons'].forEach(id => {
+                ['theme-selector', 'question-count-buttons', 'direction-selector'].forEach(id => {
                     const control = document.getElementById(id);
                     if(!control) return;
-                    const settingKey = id === 'theme-selector' ? 'theme' : 'questionCount';
+                    let settingKey;
+                    if (id === 'theme-selector') settingKey = 'theme';
+                    else if (id === 'question-count-buttons') settingKey = 'questionCount';
+                    else if (id === 'direction-selector') settingKey = 'cardDirection';
+                    
                     const selectedOption = control.querySelector(`.option[data-value="${state.uiSettings[settingKey]}"]`);
                     if (selectedOption) {
                         const pill = control.querySelector('.pill');
@@ -1237,20 +1255,22 @@
             async prepare(cardSet = null) {
                 if (cardSet) {
                     this.cards = [...cardSet];
+                    this.originalCards = [...cardSet]
                 } else {
                     if (this.sessionType === 'review') {
                         const deckCards = await dbOps.getCardsByDeck(this.deckId);
                         const now = Date.now();
                         this.cards = deckCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
+                        this.originalCards = [...deckCards]; // Use all cards from the deck for distractors
                     } else {
                         this.cards = await dbOps.getCardsByDeck(this.deckId);
                         if (state.currentTagFilter) {
                             this.cards = this.cards.filter(card => card.tags && card.tags.includes(state.currentTagFilter));
                         }
+                        this.originalCards = [...this.cards];
                     }
                 }
 
-                this.originalCards = [...this.cards];
                 this.cards.sort(() => Math.random() - 0.5);
 
                 const count = parseInt(state.uiSettings.questionCount, 10);
@@ -1258,14 +1278,9 @@
                     this.cards = this.cards.slice(0, count);
                 }
 
-                if (state.uiSettings.learningMode === 'quiz' && this.cards.length > 0 && this.cards.length < 4) {
-                    const questionCardIds = new Set(this.cards.map(c => c.id));
+                if (state.uiSettings.learningMode === 'quiz' && this.cards.length > 0 && this.originalCards.length < 4) {
                     const allDeckCards = await dbOps.getCardsByDeck(this.deckId);
-                    const potentialDistractors = allDeckCards.filter(c => !questionCardIds.has(c.id));
-                    potentialDistractors.sort(() => Math.random() - 0.5);
-                    const needed = 4 - this.cards.length;
-                    const extraChoices = potentialDistractors.slice(0, needed);
-                    this.originalCards = [...this.cards, ...extraChoices];
+                    this.originalCards = [...allDeckCards]; // Ensure full deck is available
                 }
             }
 
@@ -1274,7 +1289,7 @@
                     showToast("学習するカードがありません。");
                     return false;
                 }
-                if (state.uiSettings.learningMode === 'quiz' && this.originalCards.length < 4) {
+                if (state.uiSettings.learningMode === 'quiz' && this.originalCards.length < 4 && this.cards.length < 4) {
                     showToast("クイズの選択肢を作成するのに十分なカードが単語帳にありません。");
                     return false;
                 }
@@ -1300,8 +1315,19 @@
                 setTimeout(() => {
                     if (this.currentIndex >= this.cards.length) return;
                     const cardData = this.cards[this.currentIndex];
-                    const question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
-                    const answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
+                    let question, answer;
+                    if(state.uiSettings.cardDirection === 'random'){
+                        if(Math.random() < 0.5){
+                            question = cardData.front;
+                            answer = cardData.back;
+                        } else {
+                            question = cardData.back;
+                            answer = cardData.front;
+                        }
+                    } else {
+                         question = state.uiSettings.cardDirection === 'front' ? cardData.front : cardData.back;
+                         answer = state.uiSettings.cardDirection === 'front' ? cardData.back : cardData.front;
+                    }
                     
                     dom.flashcardFront.textContent = question;
                     dom.flashcardBack.textContent = answer;
@@ -1317,14 +1343,29 @@
                 dom.quizNextButton.classList.remove('visible');
                 
                 const card = this.cards[this.currentIndex];
-                const questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
-                const correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
-                
+                let questionText, correctAnswer, answerSide;
+
+                if (state.uiSettings.cardDirection === 'random') {
+                    if (Math.random() < 0.5) {
+                        questionText = card.front;
+                        correctAnswer = card.back;
+                        answerSide = 'back';
+                    } else {
+                        questionText = card.back;
+                        correctAnswer = card.front;
+                        answerSide = 'front';
+                    }
+                } else {
+                    questionText = state.uiSettings.cardDirection === 'front' ? card.front : card.back;
+                    correctAnswer = state.uiSettings.cardDirection === 'front' ? card.back : card.front;
+                    answerSide = state.uiSettings.cardDirection === 'front' ? 'back' : 'front';
+                }
+
                 const distractors = this.originalCards
                     .filter(c => c.id !== card.id)
                     .sort(() => 0.5 - Math.random())
                     .slice(0, 3)
-                    .map(c => state.uiSettings.cardDirection === 'front' ? c.back : c.front);
+                    .map(c => c[answerSide]);
 
                 const options = [...new Set([correctAnswer, ...distractors])].sort(() => 0.5 - Math.random());
                 
@@ -1384,7 +1425,6 @@
                         this.incorrectCards.push(card);
                     }
                     
-                    // Do not update persistent data if it's a retry session
                     if (this.sessionType !== 'retry') {
                         let scoreChange = 0;
                         if (state.uiSettings.learningMode === 'quiz') {
@@ -1448,7 +1488,7 @@
                 quizOptions: document.getElementById('quiz-options'),
                 quizNextButton: document.getElementById('quiz-next-button'),
                 toggleMode: document.getElementById('toggle-mode'),
-                toggleDirection: document.getElementById('toggle-direction'),
+                homeToggleDirection: document.getElementById('home-toggle-direction'),
                 resultScreen: {
                     fill: document.getElementById('result-progress-fill'),
                     accuracyPercent: document.getElementById('result-accuracy-percent'),
@@ -1569,9 +1609,12 @@
                 saveSetting('learningMode', state.uiSettings.learningMode === 'card' ? 'quiz' : 'card');
                 updateModeButton();
             });
-            dom.toggleDirection.addEventListener('click', () => {
-                saveSetting('cardDirection', state.uiSettings.cardDirection === 'front' ? 'back' : 'front');
-                updateDirectionButton();
+
+            dom.homeToggleDirection.addEventListener('click', () => {
+                const current = state.uiSettings.cardDirection;
+                const next = current === 'front' ? 'back' : (current === 'back' ? 'random' : 'front');
+                saveSetting('cardDirection', next);
+                updateDirectionUI();
             });
             
             dom.flashcardInner.addEventListener('click', (e) => {
@@ -1605,9 +1648,10 @@
                 }
             });
 
-            // --- 設定画面のイベントリスナー (一度だけ登録) ---
             setupSlidingPillControl('theme-selector', 'theme', updateTheme);
             setupSlidingPillControl('question-count-buttons', 'questionCount');
+            setupSlidingPillControl('direction-selector', 'cardDirection', updateDirectionUI);
+            
             const speechToggle = document.getElementById('speech-enabled-toggle');
             const speechSubPanel = document.querySelector('#speech-settings-card .sub-settings-panel');
             speechToggle.addEventListener('change', (e) => {
@@ -1636,7 +1680,6 @@
                 saveSetting('jaRate', parseFloat(e.target.value));
                 document.getElementById('ja-rate-value').textContent = e.target.value;
             });
-             // --- リザルト画面 & 学習中モーダルのイベントリスナー ---
             document.getElementById('result-back-to-home-button').addEventListener('click', () => showScreen('home'));
             document.getElementById('retry-incorrect-button').addEventListener('click', () => {
                 if(currentSession) {
