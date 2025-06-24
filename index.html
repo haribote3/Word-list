@@ -626,12 +626,16 @@
                     </div>
                     <div id="accordion-en" class="accordion-content">
                         <div class="settings-row">
-                            <label for="en-voice-select" class="settings-label">音声の種類</label>
-                            <select id="en-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
+                            <label for="en-volume-slider" class="settings-label">音量: <span id="en-volume-value">1.0</span></label>
+                            <input type="range" id="en-volume-slider" min="0" max="1" step="0.1" value="1" class="w-1/2">
                         </div>
                         <div class="settings-row">
                             <label for="en-rate-slider" class="settings-label">速度: <span id="en-rate-value">1.0</span></label>
                             <input type="range" id="en-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
+                        </div>
+                         <div class="settings-row">
+                            <label for="en-voice-select" class="settings-label">音声の種類</label>
+                            <select id="en-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
                         </div>
                     </div>
                     <div class="accordion-header settings-row" data-target="accordion-ja">
@@ -640,12 +644,16 @@
                     </div>
                      <div id="accordion-ja" class="accordion-content">
                         <div class="settings-row">
-                            <label for="ja-voice-select" class="settings-label">音声の種類</label>
-                            <select id="ja-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
+                            <label for="ja-volume-slider" class="settings-label">音量: <span id="ja-volume-value">1.0</span></label>
+                            <input type="range" id="ja-volume-slider" min="0" max="1" step="0.1" value="1" class="w-1/2">
                         </div>
                         <div class="settings-row">
                             <label for="ja-rate-slider" class="settings-label">速度: <span id="ja-rate-value">1.0</span></label>
                             <input type="range" id="ja-rate-slider" min="0.5" max="2" step="0.1" value="1" class="w-1/2">
+                        </div>
+                        <div class="settings-row">
+                            <label for="ja-voice-select" class="settings-label">音声の種類</label>
+                            <select id="ja-voice-select" class="w-1/2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]"></select>
                         </div>
                     </div>
                 </div>
@@ -732,8 +740,10 @@
                 speechEnabled: true, 
                 questionCount: 'all',
                 enRate: 1.0,
-                enVoice: null,
                 jaRate: 1.0,
+                enVolume: 1.0,
+                jaVolume: 1.0,
+                enVoice: null,
                 jaVoice: null,
                 quizAnswerReadAloud: false,
             }
@@ -810,7 +820,7 @@
             Object.keys(state.uiSettings).forEach(key => {
                 const savedValue = localStorage.getItem(key);
                 if (savedValue) {
-                    if (key.includes('Rate')) {
+                    if (key.includes('Rate') || key.includes('Volume')) {
                         state.uiSettings[key] = parseFloat(savedValue);
                     } else if (typeof state.uiSettings[key] === 'boolean') {
                         state.uiSettings[key] = savedValue === 'true';
@@ -836,15 +846,12 @@
         const updateModeButton = () => { dom.toggleMode.innerHTML = state.uiSettings.learningMode === 'card' ? '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>重ねたカードのアイコン</title><rect x="5" y="15" width="50" height="35" rx="5" fill="var(--icon-back-card-color)" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="50" height="35" rx="5" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/></svg>' : '<svg viewBox="0 0 70 60" class="w-8 h-8"><title>選択肢グリッドのアイコン</title><rect x="10" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="38" y="5" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="33" width="22" height="22" rx="4" fill="var(--card-bg-color)" stroke="currentColor" stroke-width="1.5"/><g><rect x="38" y="33" width="22" height="22" rx="4" fill="var(--success-color)"/><path d="M44 44 l4 4 l8 -8" stroke="var(--primary-text-color)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>'; }
         
         const updateDirectionUI = () => {
-            const frontIcon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
-            const backIcon = `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
-            const randomIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>`;
-
-            const direction = state.uiSettings.cardDirection;
-            if (direction === 'front') dom.homeToggleDirection.innerHTML = frontIcon;
-            else if (direction === 'back') dom.homeToggleDirection.innerHTML = backIcon;
-            else dom.homeToggleDirection.innerHTML = randomIcon;
-            
+            const icons = {
+                front: `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>表から裏へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" stroke="var(--card-bg-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 65 40 L 72.5 40 A 5 5 0 0 1 77.5 45 V 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 74.5 57.5 L 77.5 60.5 L 80.5 57.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`,
+                back: `<svg viewBox="0 0 100 100" class="w-12 h-12"><title>裏から表へ</title><rect x="60" y="60" width="35" height="35" rx="3" fill="var(--card-bg-color)" stroke="var(--text-color-secondary)" stroke-width="1.5"/><rect x="15" y="15" width="50" height="50" rx="5" fill="var(--icon-back-card-color)" stroke="var(--text-color-secondary)" stroke-width="2"/><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" stroke="var(--icon-back-card-color)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><g><path d="M 40 65 V 72.5 A 5 5 0 0 0 45 77.5 H 57.5" stroke="var(--text-color-secondary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M 57.5 74.5 L 60.5 77.5 L 57.5 80.5" fill="none" stroke="var(--text-color-secondary)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`,
+                random: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>`
+            };
+            dom.homeToggleDirection.innerHTML = icons[state.uiSettings.cardDirection] || icons.front;
             updateSettingsUI();
         }
 
@@ -934,14 +941,22 @@
             const history = (card.history || []).map(h => `<span class="inline-block w-3 h-3 rounded-full ${h ? 'bg-green-500' : 'bg-red-500'}"></span>`).join('');
             const editIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
             const deleteIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
-            return `<div class="flex items-center"><div class="flex-1 border-r border-gray-200 pr-3 mr-3 cursor-pointer card-front-div"><div class="text-xs text-[var(--text-color-secondary)]">オモテ</div><div class="card-front-text font-medium">${escapeHTML(card.front)}</div></div><div class="flex-1 cursor-pointer card-back-div"><div class="text-xs text-[var(--text-color-secondary)]">ウラ</div><div class="card-back-text font-medium">${escapeHTML(card.back)}</div></div><div class="flex items-center gap-3 ml-2"><div class="flex gap-1">${history}</div><button class="edit-card-button text-[var(--text-color-secondary)] hover:text-[var(--primary-color)] transition-colors">${editIcon}</button><button class="delete-card-button text-[var(--text-color-secondary)] hover:text-[var(--danger-color)] transition-colors">${deleteIcon}</button></div></div><div class="mt-2">${tagsHtml}</div>`;
+            return `<div class="flex items-center"><div class="flex-1 border-r border-gray-200 pr-3 mr-3 cursor-pointer card-front-div"><div class="text-xs text-[var(--text-color-secondary)]">オモテ</div><div class="card-front-text font-medium">${escapeHTML(card.front)}</div></div><div class="flex-1 cursor-pointer card-back-div"><div class="text-xs text-[var(--text-color-secondary)]">ウラ</div><div class="card-back-text font-medium">${escapeHTML(card.back)}</div></div><div class="flex items-center gap-2 ml-2"><div class="flex gap-1">${history}</div><button class="edit-card-button text-[var(--text-color-secondary)] hover:text-sky-500 p-1">${editIcon}</button><button class="delete-card-button text-[var(--text-color-secondary)] hover:text-red-500 p-1">${deleteIcon}</button></div></div><div class="mt-2">${tagsHtml}</div>`;
         }
         
         const createCardEditView = (card) => {
             const tagsStr = (card.tags || []).join(', ');
-            const saveIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-            const cancelIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-            return `<div class="flex-1 flex flex-col gap-2"><input class="edit-front-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.front)}"><input class="edit-back-input w-full px-2 py-1 border rounded" value="${escapeHTML(card.back)}"><input class="edit-tags-input w-full px-2 py-1 border rounded" placeholder="タグ (例: #fruit, #food)" value="${escapeHTML(tagsStr)}"></div><div class="flex flex-col gap-2 ml-2"><button class="save-card-button text-green-500 hover:text-green-600 p-1">${saveIcon}</button><button class="cancel-edit-button text-red-500 hover:text-red-600 p-1">${cancelIcon}</button></div>`;
+            return `
+                <div class="flex flex-col gap-2">
+                     <input class="edit-front-input w-full px-2 py-1 border border-[var(--border-color)] rounded-md bg-[var(--bg-color)]" value="${escapeHTML(card.front)}">
+                     <input class="edit-back-input w-full px-2 py-1 border border-[var(--border-color)] rounded-md bg-[var(--bg-color)]" value="${escapeHTML(card.back)}">
+                     <input class="edit-tags-input w-full px-2 py-1 border border-[var(--border-color)] rounded-md bg-[var(--bg-color)]" placeholder="タグ (例: #fruit, #food)" value="${escapeHTML(tagsStr)}">
+                </div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button class="cancel-edit-button px-4 py-1.5 text-sm font-semibold rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300">キャンセル</button>
+                    <button class="save-card-button px-4 py-1.5 text-sm font-semibold rounded-md bg-sky-500 text-white hover:bg-sky-600">保存する</button>
+                </div>
+            `;
         };
         
         const startLearningSession = async (deckId, sessionType = 'all', cardSet = null) => {
@@ -1010,8 +1025,14 @@
             if (total === 0) {
                 deck.progress = 0;
             } else {
-                const mastered = cards.filter(c => (c.consecutiveCorrect || 0) >= 3).length;
-                deck.progress = Math.round((mastered / total) * 100);
+                const totalPoints = cards.reduce((sum, card) => {
+                    const correctCount = card.consecutiveCorrect || 0;
+                    if (correctCount === 1) return sum + 33;
+                    if (correctCount === 2) return sum + 66;
+                    if (correctCount >= 3) return sum + 100;
+                    return sum;
+                }, 0);
+                deck.progress = Math.round(totalPoints / total);
             }
             await dbOps.updateDeck(deck);
         }
@@ -1113,10 +1134,12 @@
             
             if (lang === 'ja-JP') {
                 utterance.rate = state.uiSettings.jaRate;
+                utterance.volume = state.uiSettings.jaVolume;
                 const voice = speechSynthesis.getVoices().find(v => v.name === state.uiSettings.jaVoice);
                 if(voice) utterance.voice = voice;
             } else {
                 utterance.rate = state.uiSettings.enRate;
+                utterance.volume = state.uiSettings.enVolume;
                 const voice = speechSynthesis.getVoices().find(v => v.name === state.uiSettings.enVoice);
                 if(voice) utterance.voice = voice;
             }
@@ -1169,9 +1192,13 @@
             document.getElementById('speech-enabled-toggle').checked = state.uiSettings.speechEnabled;
             document.getElementById('quiz-answer-speak-toggle').checked = state.uiSettings.quizAnswerReadAloud;
             document.getElementById('en-rate-slider').value = state.uiSettings.enRate;
-            document.getElementById('en-rate-value').textContent = state.uiSettings.enRate;
+            document.getElementById('en-rate-value').textContent = state.uiSettings.enRate.toFixed(1);
             document.getElementById('ja-rate-slider').value = state.uiSettings.jaRate;
-            document.getElementById('ja-rate-value').textContent = state.uiSettings.jaRate;
+            document.getElementById('ja-rate-value').textContent = state.uiSettings.jaRate.toFixed(1);
+            document.getElementById('en-volume-slider').value = state.uiSettings.enVolume;
+            document.getElementById('en-volume-value').textContent = state.uiSettings.enVolume.toFixed(1);
+            document.getElementById('ja-volume-slider').value = state.uiSettings.jaVolume;
+            document.getElementById('ja-volume-value').textContent = state.uiSettings.jaVolume.toFixed(1);
             
             requestAnimationFrame(() => {
                 ['theme-selector', 'question-count-buttons', 'direction-selector'].forEach(id => {
@@ -1255,13 +1282,14 @@
             async prepare(cardSet = null) {
                 if (cardSet) {
                     this.cards = [...cardSet];
-                    this.originalCards = [...cardSet]
+                    const allDeckCards = await dbOps.getCardsByDeck(this.deckId);
+                    this.originalCards = [...allDeckCards];
                 } else {
                     if (this.sessionType === 'review') {
                         const deckCards = await dbOps.getCardsByDeck(this.deckId);
                         const now = Date.now();
                         this.cards = deckCards.filter(c => (c.nextReviewDate || 0) <= now || (c.nigatescore || 0) >= 5);
-                        this.originalCards = [...deckCards]; // Use all cards from the deck for distractors
+                        this.originalCards = [...deckCards];
                     } else {
                         this.cards = await dbOps.getCardsByDeck(this.deckId);
                         if (state.currentTagFilter) {
@@ -1277,11 +1305,6 @@
                 if (this.sessionType !== 'retry' && !isNaN(count) && this.cards.length > count) {
                     this.cards = this.cards.slice(0, count);
                 }
-
-                if (state.uiSettings.learningMode === 'quiz' && this.cards.length > 0 && this.originalCards.length < 4) {
-                    const allDeckCards = await dbOps.getCardsByDeck(this.deckId);
-                    this.originalCards = [...allDeckCards]; // Ensure full deck is available
-                }
             }
 
             isValid() {
@@ -1289,7 +1312,7 @@
                     showToast("学習するカードがありません。");
                     return false;
                 }
-                if (state.uiSettings.learningMode === 'quiz' && this.originalCards.length < 4 && this.cards.length < 4) {
+                if (state.uiSettings.learningMode === 'quiz' && this.originalCards.length < 4) {
                     showToast("クイズの選択肢を作成するのに十分なカードが単語帳にありません。");
                     return false;
                 }
@@ -1550,7 +1573,13 @@
             dom.cardListContainer.addEventListener('click', async (e) => {
                 const cardItem = e.target.closest('.card-item');
                 if (!cardItem) return;
+                
                 const cardId = Number(cardItem.dataset.cardId);
+
+                if (!Number.isFinite(cardId) || cardId <= 0) {
+                    console.error("Invalid or missing card ID. Aborting operation.", cardItem.dataset.cardId);
+                    return; 
+                }
 
                 if (e.target.closest('.delete-card-button')) {
                     showConfirmModal("このカードを本当に削除しますか？", async () => {
@@ -1562,28 +1591,36 @@
                 } 
                 else if(e.target.closest('.edit-card-button')) {
                     const card = await dbOps.getCard(cardId);
-                    cardItem.innerHTML = createCardEditView(card);
+                    if(card) {
+                        cardItem.innerHTML = createCardEditView(card);
+                    }
                 }
                 else if (e.target.closest('.save-card-button')) {
                     const card = await dbOps.getCard(cardId);
-                    card.front = cardItem.querySelector('.edit-front-input').value.trim();
-                    card.back = cardItem.querySelector('.edit-back-input').value.trim();
-                    const tagsStr = cardItem.querySelector('.edit-tags-input').value.trim();
-                    card.tags = tagsStr.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean).map(t => `#${t}`);
-                    await dbOps.updateCard(card);
-                    state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
-                    renderCards();
-                    renderTagFilters();
+                    if(card) {
+                        card.front = cardItem.querySelector('.edit-front-input').value.trim();
+                        card.back = cardItem.querySelector('.edit-back-input').value.trim();
+                        const tagsStr = cardItem.querySelector('.edit-tags-input').value.trim();
+                        card.tags = tagsStr.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean).map(t => `#${t}`);
+                        await dbOps.updateCard(card);
+                        state.currentDeckCards = await dbOps.getCardsByDeck(state.currentDeckId);
+                        renderCards();
+                        renderTagFilters();
+                    }
                 }
                 else if (e.target.closest('.cancel-edit-button')) {
                     const card = await dbOps.getCard(cardId);
-                    cardItem.innerHTML = createCardView(card);
+                    if(card) {
+                        cardItem.innerHTML = createCardView(card);
+                    }
                 }
                 else if (e.target.closest('.card-front-div')) {
-                    speak(e.target.closest('.card-front-text').textContent);
+                    const frontText = cardItem.querySelector('.card-front-text');
+                    if (frontText) speak(frontText.textContent);
                 }
                 else if (e.target.closest('.card-back-div')) {
-                    speak(e.target.closest('.card-back-text').textContent);
+                    const backText = cardItem.querySelector('.card-back-text');
+                    if(backText) speak(backText.textContent);
                 }
             });
 
@@ -1670,17 +1707,35 @@
             });
 
             document.getElementById('quiz-answer-speak-toggle').addEventListener('change', (e) => saveSetting('quizAnswerReadAloud', e.target.checked));
-            document.getElementById('en-voice-select').addEventListener('change', (e) => saveSetting('enVoice', e.target.value));
-            document.getElementById('ja-voice-select').addEventListener('change', (e) => saveSetting('jaVoice', e.target.value));
+            
+            document.getElementById('en-volume-slider').addEventListener('input', (e) => {
+                const volume = parseFloat(e.target.value);
+                saveSetting('enVolume', volume);
+                document.getElementById('en-volume-value').textContent = volume.toFixed(1);
+            });
             document.getElementById('en-rate-slider').addEventListener('input', (e) => {
-                saveSetting('enRate', parseFloat(e.target.value));
-                document.getElementById('en-rate-value').textContent = e.target.value;
+                const rate = parseFloat(e.target.value);
+                saveSetting('enRate', rate);
+                document.getElementById('en-rate-value').textContent = rate.toFixed(1);
             });
-             document.getElementById('ja-rate-slider').addEventListener('input', (e) => {
-                saveSetting('jaRate', parseFloat(e.target.value));
-                document.getElementById('ja-rate-value').textContent = e.target.value;
+            document.getElementById('en-voice-select').addEventListener('change', (e) => saveSetting('enVoice', e.target.value));
+            
+            document.getElementById('ja-volume-slider').addEventListener('input', (e) => {
+                const volume = parseFloat(e.target.value);
+                saveSetting('jaVolume', volume);
+                document.getElementById('ja-volume-value').textContent = volume.toFixed(1);
             });
-            document.getElementById('result-back-to-home-button').addEventListener('click', () => showScreen('home'));
+            document.getElementById('ja-rate-slider').addEventListener('input', (e) => {
+                const rate = parseFloat(e.target.value);
+                saveSetting('jaRate', rate);
+                document.getElementById('ja-rate-value').textContent = rate.toFixed(1);
+            });
+            document.getElementById('ja-voice-select').addEventListener('change', (e) => saveSetting('jaVoice', e.target.value));
+
+            document.getElementById('result-back-to-home-button').addEventListener('click', async () => { 
+                await refreshDecks();
+                showScreen('home');
+            });
             document.getElementById('retry-incorrect-button').addEventListener('click', () => {
                 if(currentSession) {
                     startLearningSession(currentSession.deckId, 'retry', currentSession.incorrectCards);
