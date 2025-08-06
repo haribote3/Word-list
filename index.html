@@ -465,6 +465,16 @@
             transform: translateY(0);
             pointer-events: auto;
         }
+        .quiz-option-button {
+            position: relative;
+        }
+        .feedback-mark {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-color)]">
@@ -552,7 +562,9 @@
              <div id="quiz-mode" class="w-full max-w-md h-full flex-col hidden">
                 <div id="quiz-question" class="w-full text-center text-3xl md:text-4xl font-semibold mb-8 cursor-pointer"></div>
                 <div id="quiz-options" class="grid grid-cols-1 gap-4 w-full"></div>
-                <button id="quiz-next-button" class="mt-8 px-8 py-3 rounded-lg font-bold text-[var(--primary-text-color)] bg-[var(--primary-color)]">次の問題へ</button>
+                <div class="w-full flex justify-center">
+                    <button id="quiz-next-button" class="mt-8 px-8 py-3 rounded-lg font-bold text-[var(--primary-text-color)] bg-[var(--primary-color)]">次の問題へ</button>
+                </div>
             </div>
         </main>
     </div>
@@ -1396,11 +1408,25 @@
                 dom.quizOptions.innerHTML = '';
                 const fragment = document.createDocumentFragment();
                 options.forEach(text => {
-                    const button = document.createElement('button');
-                    button.className = "w-full p-4 bg-[var(--card-bg-color)] border-2 border-[var(--border-color)] rounded-lg text-lg font-semibold text-center hover:border-[var(--primary-color)] relative";
-                    button.textContent = text;
-                    button.onclick = (e) => this.handleQuizAnswer(e, text, correctAnswer);
-                    fragment.appendChild(button);
+                    const optionContainer = document.createElement('div');
+                    optionContainer.className = "flex items-center gap-3";
+                    
+                    const answerButton = document.createElement('button');
+                    answerButton.className = "quiz-option-button w-full p-4 bg-[var(--card-bg-color)] border-2 border-[var(--border-color)] rounded-lg text-lg font-semibold text-center hover:border-sky-500 transition-colors";
+                    answerButton.textContent = text;
+                    answerButton.onclick = (e) => this.handleQuizAnswer(e, text, correctAnswer);
+
+                    const speakerButton = document.createElement('button');
+                    speakerButton.className = "speaker-button flex-shrink-0 p-3 rounded-full text-[var(--text-color-secondary)] hover:bg-slate-200 transition-colors";
+                    speakerButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-all"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+                    speakerButton.onclick = (e) => {
+                        e.stopPropagation();
+                        speak(text);
+                    };
+
+                    optionContainer.appendChild(answerButton);
+                    optionContainer.appendChild(speakerButton);
+                    fragment.appendChild(optionContainer);
                 });
                 dom.quizOptions.appendChild(fragment);
 
@@ -1415,17 +1441,25 @@
                 dom.quizNextButton.classList.add('visible');
 
                 const wasCorrect = selected === correct;
-                Array.from(dom.quizOptions.children).forEach(btn => {
+                Array.from(dom.quizOptions.children).forEach(container => {
+                    const btn = container.querySelector('button:first-child');
                     const isCorrect = btn.textContent === correct;
                     const isSelected = btn.textContent === selected;
                     btn.disabled = true;
-                    if (isCorrect) {
-                        btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
-                        btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--success-color)]">✔</span>';
+                    if (isSelected) {
+                        if (isCorrect) {
+                            btn.classList.remove('border-[var(--border-color)]', 'hover:border-sky-500');
+                            btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
+                            btn.innerHTML += '<span class="feedback-mark text-[var(--success-color)]">✔</span>';
+                        } else {
+                            btn.classList.remove('border-[var(--border-color)]', 'hover:border-sky-500');
+                            btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
+                            btn.innerHTML += '<span class="feedback-mark text-[var(--danger-color)]">✖</span>';
+                        }
                     }
-                    if (isSelected && !isCorrect) {
-                        btn.classList.add('border-[var(--danger-color)]', 'bg-[var(--danger-bg-color)]');
-                        btn.innerHTML += '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-[var(--danger-color)]">✖</span>';
+                    if (isCorrect && !isSelected) {
+                        btn.classList.remove('border-[var(--border-color)]', 'hover:border-sky-500');
+                        btn.classList.add('border-[var(--success-color)]', 'bg-[var(--success-bg-color)]');
                     }
                 });
                 
